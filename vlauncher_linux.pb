@@ -8,30 +8,30 @@ Declare setVerList()
 Declare.s getLibsString(obj.i, ver.s)
 Declare.s fileRead(path.s)
 
-If OpenWindow(0, #PB_Ignore, #PB_Ignore, 200, 181, "Vortex Launcher")
+If OpenWindow(0, #PB_Ignore, #PB_Ignore, 250, 210, "Vortex Launcher")
   
   SetCurrentDirectory(Directory)
   OpenPreferences(GetHomeDirectory() + ".vortex_launcher.conf")
   
-  StringGadget(1, 5, 5, 190, 25, ReadPreferenceString("Name", "Имя"))
+  StringGadget(1, 5, 5, 240, 30, ReadPreferenceString("Name", "Имя"))
   SetGadgetAttribute(1, #PB_String_MaximumLength, 16)
   
-  StringGadget(2, 5, 34, 190, 25, ReadPreferenceString("Ram", "512"), #PB_String_Numeric)
+  StringGadget(2, 5, 40, 240, 30, ReadPreferenceString("Ram", "512"), #PB_String_Numeric)
   SetGadgetAttribute(2, #PB_String_MaximumLength, 4)
   GadgetToolTip(2, "Выделяемая память")
   
-  ComboBoxGadget(3, 5, 63, 190, 25)
+  ComboBoxGadget(3, 5, 75, 240, 30)
   
-  StringGadget(4, 5, 92, 190, 25, ReadPreferenceString("Java", "/usr/bin/java"))
+  StringGadget(4, 5, 112, 240, 30, ReadPreferenceString("Java", "/usr/bin/java"))
   GadgetToolTip(4, "Путь к Java")
   
-  ButtonGadget(5, 5, 123, 190, 45, "Играть")
+  ButtonGadget(5, 5, 150, 240, 45, "Играть")
   If LoadFont(0, "Ariral", 16, #PB_Font_Bold)
     SetGadgetFont(5, FontID(0))
   EndIf
   
-  TextGadget(6, 0, 171, 50, 20, "by Kron")
-  TextGadget(7, 171, 171, 50, 20, "v1.0.1")
+  TextGadget(6, 0, 198, 50, 20, "by Kron")
+  TextGadget(7, 220, 198, 50, 20, "v1.0.2")
   If LoadFont(1, "Ariral", 7)
     font = FontID(1) : SetGadgetFont(6, font) : SetGadgetFont(7, font)
   EndIf
@@ -50,7 +50,7 @@ If OpenWindow(0, #PB_Ignore, #PB_Ignore, 200, 181, "Vortex Launcher")
           name = GetGadgetText(1)
           If FindString(name, " ") : name = RemoveString(name, " ") : EndIf
           
-          If name And ram And version <> "Нет версий"
+          If name And ram And version <> "Версии не найдены"
             If FileSize(java) <> -1
               If ParseJSON(0, fileRead("versions/" + version + "/" + version + ".json"))
                 jsonObj = JSONValue(0)
@@ -66,18 +66,17 @@ If OpenWindow(0, #PB_Ignore, #PB_Ignore, 200, 181, "Vortex Launcher")
                   natives = "versions/" + version + "/natives"
                   libs = getLibsString(jsonObj, version)
                   mainClass = GetJSONString(GetJSONMember(jsonObj, "mainClass"))
-                  assets = GetJSONString(GetJSONMember(jsonObj, "assets"))
                 
                   params = GetJSONString(GetJSONMember(jsonObj, "minecraftArguments"))
                   params = ReplaceString(params, "${auth_player_name}", name)
                   params = ReplaceString(params, "${version_name}", version)
                   params = ReplaceString(params, "${game_directory}", Directory)
                   params = ReplaceString(params, "${assets_root}", "assets")
-                  params = ReplaceString(params, "${assets_index_name}", assets)
                   params = ReplaceString(params, "${auth_uuid}", "00000000-0000-0000-0000-000000000000")
                   params = ReplaceString(params, "${auth_access_token}", "00000000-0000-0000-0000-000000000000")
                   params = ReplaceString(params, "${user_properties}", "{}")
                   params = ReplaceString(params, "${user_type}", "mojang")
+                  params = ReplaceString(params, "${version_type}", "plain")
                   
                   inheritsM = GetJSONMember(jsonObj, "inheritsFrom")
                   If inheritsM
@@ -86,16 +85,21 @@ If OpenWindow(0, #PB_Ignore, #PB_Ignore, 200, 181, "Vortex Launcher")
                     If ParseJSON(1, fileRead("versions/" + inherits + "/" + inherits + ".json"))
                       libs + getLibsString(JSONValue(1), inherits)
                       natives = "versions/" + inherits + "/natives"
+                      assets = GetJSONString(GetJSONMember(JSONValue(1), "assets"))
                     Else
-                      MessageRequester("Error", "Отсутствует файл " + inherits + ".json") : End
+                      MessageRequester("Error", "Отсутствует файл " + inherits + ".json!") : End
                     EndIf
+                  Else
+                    assets = GetJSONString(GetJSONMember(jsonObj, "assets"))
                   EndIf
+                  
+                  params = ReplaceString(params, "${assets_index_name}", assets)
                   
                   If Val(ram) < 250 : ram = "250" : EndIf
                   WritePreferenceString("Name", name) : WritePreferenceString("Ram", ram)
                   WritePreferenceString("Java", java) : WritePreferenceString("ChosenVer", version) : ClosePreferences()
                   
-                  RunProgram(java, "-Xmx" + ram + "M -Xms" + ram + "M -Djava.library.path=" + natives + " -cp " + libs + jar + " " + mainClass + " " + params, Directory)
+                  RunProgram(java, "-Xmx" + ram + "M -XX:+UseConcMarkSweepGC -XX:+CMSIncrementalMode -XX:-UseAdaptiveSizePolicy -Xmn128M -Djava.library.path=" + natives + " -cp " + libs + jar + " " + mainClass + " " + params, Directory)
                   End
                 Else
                   MessageRequester("Error", "Отсутствует jar файл")
@@ -103,7 +107,7 @@ If OpenWindow(0, #PB_Ignore, #PB_Ignore, 200, 181, "Vortex Launcher")
                 
                 FreeJSON(#PB_All)
               Else
-                MessageRequester("Error", "Отсутствует файл " + version + ".json")
+                MessageRequester("Error", "Отсутствует json файл!")
               EndIf
             Else
               MessageRequester("Error", "В системе не найдена Java!" + #CRLF$ + #CRLF$ + "Установите ее или введи путь к ней," + #CRLF$ + "если она уже установлена!")
@@ -153,7 +157,7 @@ Procedure setVerList()
   EndIf
   
   If Not CountGadgetItems(3)
-    DisableGadget(3, 1) : AddGadgetItem(3, 0, "Нет версий") : SetGadgetState(3, 0)
+    DisableGadget(3, 1) : AddGadgetItem(3, 0, "Версии не найдены") : SetGadgetState(3, 0)
   EndIf
 EndProcedure
 
@@ -216,11 +220,11 @@ Procedure.s fileRead(path.s)
   
   ProcedureReturn file
 EndProcedure
-; IDE Options = PureBasic 5.31 (Linux - x86)
-; CursorPosition = 138
-; FirstLine = 119
+; IDE Options = PureBasic 5.62 (Linux - x64)
+; CursorPosition = 180
+; FirstLine = 175
 ; Folding = -
-; EnableUnicode
 ; EnableXP
-; Executable = VLauncher
+; Executable = VLauncher_x642
 ; DisableDebugger
+; EnableUnicode
