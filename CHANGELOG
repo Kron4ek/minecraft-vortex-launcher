@@ -1,30 +1,43 @@
+v1.1
+	* Implemented Client Downloader. It's now possible to download any Minecraft (client) version
+	* Implemented downloading missing libraries on game launch (can be enabled in settings)
+	* Implemented UUID generator
+	* Implemented settings window
+	* Some interface (GUI) improvements
+	* Fixed client JSON parsing, it's now possible to run all Minecraft version (including newest)
+	* It's now possible to install Forge and (probably) other APIs
+	* Added ability to change launch parameters (can be changed in settings)
+	* Added ability to save launch string to external file
+	* launcher_profile.json creates(needed by Forge and some other APIs)
+	* Disabled RAM amount limit
+	* Working directory changed to launcher's directory
+	* Configuration location changed to launcher's directory
+	* Additional bug fixes and improvements
+	
+---------------------------------------------------------------------
 v1.0.2
-	* Исправлен запуск Forge версий клиента
-	* Изменены параметры запуска в соответствии с официальным лаунчером
-	* Добавлена обработка параметра version_type
-	* Несколько других мелких исправлений
+	* Fixed launching of Forge clients
+	* Launch arguments changed according to official Minecraft launcher
+	* Added handling of version_type argument
+	* Some additional fixes
 ---------------------------------------------------------------------
 v1.0.1
-	* Выбор версии теперь запоминается
+	* Launcher now remember selected version
 ---------------------------------------------------------------------
 v1.0
-	* Исправлены различные ошибки
-	* Улучшения в работе лаунчера
-	* Добавлена возможность указать путь к Java (Linux)
----------------------------------------------------------------------
-v0.9.3 - только для Windows
-	* Добавлена возможность выбрать Java вручную, если лаунчер не нашел ее
+	* Some bug fixes and imporvements
+	* Added ability to specify path to Java on Linux
 ---------------------------------------------------------------------
 v0.9.2
-	* Добавлен выбор версии и разрядности Java (Windows)
-	* Добавлено удаление пробелов из названия версии
+	* Added selection of Java version and architecture
+	* Launcher removes spaces from version name
 ---------------------------------------------------------------------
 v0.9.1
-	* Модифицирован поиск Java (Windows)
-	* Добавлена защита от выделения слишком малого кол-ва памяти
-	* Добавлено ограничение на длину имени
-	* Добавлено удаление пробелов из имени
-	* В поле памяти теперь можно вводить только цифры
+	* Java finder is modified (only for Windows)
+	* Launcher forbids allocating low amount of ram
+	* Launcher forbids too short player names
+	* Launcher removes spaces from player name
+	* RAM string now accepts only digits
 ---------------------------------------------------------------------
 v0.9
-	* Первый публичный релиз
+	* First public release
