@@ -1,4 +1,4 @@
-## Vortex Minecraft Lunacher
+## Vortex Minecraft Launcher
 
 Fast, lightweight and easy to use Minecraft launcher. Natively avaiable for Linux and Windows.
 
