@@ -2,13 +2,13 @@ v1.1
 	* Implemented Client Downloader. It's now possible to download any Minecraft (client) version
 	* Implemented downloading missing libraries on game launch (can be enabled in settings)
 	* Implemented UUID generator
-	* Implemented settings
+	* Implemented launcher settings
 	* Some interface (GUI) improvements
 	* Fixed client JSON parsing, it's now possible to run all Minecraft version (including newest)
 	* It's now possible to install Forge and (probably) other APIs
 	* Added ability to change launch parameters (can be changed in settings)
 	* Added ability to save launch string to external file
-	* launcher_profile.json creates(needed by Forge and some other APIs)
+	* launcher_profile.json creates (required for Forge installers)
 	* Disabled RAM amount limit
 	* Working directory changed to launcher's directory
 	* Configuration location changed to launcher's directory
