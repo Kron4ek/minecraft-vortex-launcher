@@ -15,6 +15,7 @@ Fast, lightweight and easy to use Minecraft launcher. Natively avaiable for Linu
 * Downloads missing libraries
 * Doesn't require Mojang account
 * Doesn't require Java to work
+* Works fully offline (internet needed only for downloading clients and libraries)
 
 ---
 
