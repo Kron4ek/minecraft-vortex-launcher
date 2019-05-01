@@ -16,4 +16,10 @@ Fast, lightweight and easy to use Minecraft launcher. Natively avaiable for Linu
 * Doesn't require Mojang account
 * Doesn't require Java to work
 
-[main window](https://i.imgur.com/DtVlKm7.png)
+---
+
+## Screenshots
+
+![main window](https://i.imgur.com/pd2tnnK.png)
+![settings](https://i.imgur.com/xXOZ8gn.png)
+![client downloader](https://i.imgur.com/1QTjiDw.png)
