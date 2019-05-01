@@ -306,7 +306,7 @@ If OpenWindow(0, #PB_Ignore, #PB_Ignore, windowWidth, windowHeight, "Vortex Mine
         Case settingsButton
           DisableGadget(settingsButton, 1)
 
-          If OpenWindow(3, #PB_Ignore, #PB_Ignore, 350, 240, "Semtex Launcher Settings")
+          If OpenWindow(3, #PB_Ignore, #PB_Ignore, 350, 240, "Vortex Launcher Settings")
               argsTextGadget = TextGadget(#PB_Any, 5, 5, 80, 20, "Launch arguments:")
               argsGadget = StringGadget(#PB_Any, 85, 5, 260, 30, ReadPreferenceString("LaunchArguments", customLaunchArgumentsDefault))
               GadgetToolTip(argsGadget, "These arguments will be used to launch Minecraft")
@@ -583,7 +583,7 @@ Procedure downloadFiles(downloadAllFiles.i)
     InitNetwork()
 
     If asyncDownload
-      While Eof(file) = 0 Or currentDownloads > 0
+      While (Eof(file) = 0 Or currentDownloads > 0) And failedDownloads <= 5
         For i = 0 To downloadThreadsAmount
           If httpArray(i) = 0
             string = ReadString(file)
@@ -601,7 +601,6 @@ Procedure downloadFiles(downloadAllFiles.i)
                 strings(i) = string
 
                 currentDownloads + 1
-              ElseIf downloadAllFiles = 0 And ((requiredSize = 0 And fileSize > 0) Or fileSize = requiredSize)
               EndIf
             EndIf
           ElseIf HTTPProgress(httpArray(i)) = #PB_Http_Success
@@ -620,6 +619,7 @@ Procedure downloadFiles(downloadAllFiles.i)
               httpArray(i) = 0
 
               failedDownloads + 1
+              currentDownloads - 1
             EndIf
           EndIf
         Next
