@@ -27,6 +27,6 @@ Fast, lightweight and easy to use Minecraft launcher. Natively avaiable for Linu
 
 ## Screenshots
 
-![main window](https://i.imgur.com/pd2tnnK.png)
 ![settings](https://i.imgur.com/dkiweug.png)
+![main window](https://i.imgur.com/pd2tnnK.png)
 ![client downloader](https://i.imgur.com/1QTjiDw.png)
