@@ -18,7 +18,7 @@ Define.s playerName, ramAmount, clientVersion, javaBinaryPath, fullLaunchString,
 Define.s assetsIndex, clientMainClass, clientArguments, inheritsClientJar, customLaunchArguments, clientJarFile, nativesPath, librariesString
 
 Define.i downloadThread, downloadMissingLibraries, jsonArgumentsMember, jsonArgumentsModernMember, jsonInheritsFromMember
-Define.i downloadMissingLibrariesGadget, downloadThreadsGadget, asyncDownloadGadget, saveSettingsButton
+Define.i downloadMissingLibrariesGadget, downloadThreadsGadget, asyncDownloadGadget, saveSettingsButton, useCustomJavaGadget, useCustomParamsGadget
 Define.i i
 
 Define.s playerNameDefault = "Name", ramAmountDefault = "1024", javaBinaryPathDefault = "/usr/bin/java"
@@ -29,8 +29,10 @@ Define.i downloadMissingLibrariesDefault = 0
 Define.i downloadAllFilesDefault = 0
 Define.i versionsTypeDefault = 0
 Define.i saveLaunchStringDefault = 0
+Define.i useCustomJavaDefault = 0
+Define.i useCustomParamsDefault = 0
 
-Define.s launcherVersion = "1.1.0"
+Define.s launcherVersion = "1.1.0.1"
 Define.s launcherDeveloper = "Kron(4ek)"
 
 Declare progressWindow(clientVersion.s)
@@ -69,9 +71,9 @@ If OpenWindow(0, #PB_Ignore, #PB_Ignore, windowWidth, windowHeight, "Vortex Mine
 
   versionsGadget = ComboBoxGadget(#PB_Any, gadgetsIndent, 75, gadgetsWidth, gadgetsHeight)
 
-  playButton = ButtonGadget(#PB_Any, gadgetsIndent, 120, gadgetsWidth, gadgetsHeight - 10, "Play")
-  downloadButton = ButtonGadget(#PB_Any, gadgetsIndent, 160, gadgetsWidth, gadgetsHeight - 10, "Downloader")
-  settingsButton = ButtonGadget(#PB_Any, gadgetsIndent, 200, gadgetsWidth, gadgetsHeight - 10, "Settings")
+  playButton = ButtonGadget(#PB_Any, gadgetsIndent, 120, gadgetsWidth, gadgetsHeight, "Play")
+  downloadButton = ButtonGadget(#PB_Any, gadgetsIndent, 160, gadgetsWidth, gadgetsHeight, "Downloader")
+  settingsButton = ButtonGadget(#PB_Any, gadgetsIndent, 200, gadgetsWidth, gadgetsHeight, "Settings")
 
   If LoadFont(0, "Ariral", 10, #PB_Font_Bold)
     SetGadgetFont(playButton, FontID(0))
@@ -79,13 +81,12 @@ If OpenWindow(0, #PB_Ignore, #PB_Ignore, windowWidth, windowHeight, "Vortex Mine
   EndIf
 
   launcherAuthorGadget = TextGadget(#PB_Any, 2, windowHeight - 10, 70, 20, "by " + launcherDeveloper)
-  launcherVersionGadget = TextGadget(#PB_Any, windowWidth - 35, windowHeight - 10, 50, 20, "v" + launcherVersion)
+  launcherVersionGadget = TextGadget(#PB_Any, windowWidth - 43, windowHeight - 10, 50, 20, "v" + launcherVersion)
   If LoadFont(1, "Ariral", 7)
     font = FontID(1) : SetGadgetFont(launcherAuthorGadget, font) : SetGadgetFont(launcherVersionGadget, font)
   EndIf
 
   findInstalledVersions()
-  generateProfileJson()
 
   Repeat
     Event = WaitWindowEvent(500)
@@ -96,12 +97,24 @@ If OpenWindow(0, #PB_Ignore, #PB_Ignore, windowWidth, windowHeight, "Vortex Mine
           ramAmount = GetGadgetText(ramGadget)
           clientVersion = GetGadgetText(versionsGadget)
           playerName = GetGadgetText(nameGadget)
-          javaBinaryPath = ReadPreferenceString("JavaPath", javaBinaryPathDefault)
-          customLaunchArguments = ReadPreferenceString("LaunchArguments", customLaunchArgumentsDefault)
+          javaBinaryPath = "java"
+          customLaunchArguments = customLaunchArgumentsDefault
           downloadMissingLibraries = ReadPreferenceInteger("DownloadMissingLibs", downloadMissingLibrariesDefault)
 
+          If ReadPreferenceInteger("UseCustomJava", useCustomJavaDefault)
+            javaBinaryPath = ReadPreferenceString("JavaPath", javaBinaryPathDefault)
+          EndIf
+
+          If ReadPreferenceInteger("UseCustomParameters", useCustomParamsDefault)
+            customLaunchArguments = ReadPreferenceString("LaunchArguments", customLaunchArgumentsDefault)
+          EndIf
+
           If playerName And ramAmount And Len(playerName) >= 3
-            If FileSize(javaBinaryPath) <> -1
+            WritePreferenceString("Name", playerName)
+            WritePreferenceString("Ram", ramAmount)
+            WritePreferenceString("ChosenVer", clientVersion)
+
+            If RunProgram(javaBinaryPath, "-version", workingDirectory)
               jsonFile = ParseJSON(#PB_Any, fileRead("versions/" + clientVersion + "/" + clientVersion + ".json"))
 
               If jsonFile
@@ -185,10 +198,6 @@ If OpenWindow(0, #PB_Ignore, #PB_Ignore, windowWidth, windowHeight, "Vortex Mine
                   clientArguments = ReplaceString(clientArguments, "${version_type}", "client")
                   clientArguments = ReplaceString(clientArguments, "${assets_index_name}", assetsIndex)
 
-                  WritePreferenceString("Name", playerName)
-                  WritePreferenceString("Ram", ramAmount)
-                  WritePreferenceString("ChosenVer", clientVersion)
-
                   If downloadMissingLibraries
                     downloadFiles(0)
                   EndIf
@@ -217,7 +226,7 @@ If OpenWindow(0, #PB_Ignore, #PB_Ignore, windowWidth, windowHeight, "Vortex Mine
                 MessageRequester("Error", "Client json file is missing!")
               EndIf
             Else
-              MessageRequester("Error", "Java not found!" + #CRLF$ + #CRLF$ + "Check if path to Java binary is correct.")
+              MessageRequester("Error", "Java not found! Check if Java installed." + #CRLF$ + #CRLF$ + "Or check if path to Java binary is correct.")
             EndIf
           Else
             MessageRequester("Error", "Name or RAM amount is incorrect!")
@@ -230,10 +239,10 @@ If OpenWindow(0, #PB_Ignore, #PB_Ignore, windowWidth, windowHeight, "Vortex Mine
               DisableGadget(downloadButton, 1)
 
               versionsDownloadGadget = ComboBoxGadget(#PB_Any, 5, 5, 240, 30)
-              CheckBoxGadget(110, 5, 45, 20, 20, "Show all versions")
+              CheckBoxGadget(110, 5, 45, 240, 20, "Show all versions")
               versionsTypeGadget = 110
               SetGadgetState(versionsTypeGadget, ReadPreferenceInteger("ShowAllVersions", versionsTypeDefault))
-              downloadAllFilesGadget = CheckBoxGadget(#PB_Any, 5, 70, 20, 20, "Redownload existing files")
+              downloadAllFilesGadget = CheckBoxGadget(#PB_Any, 5, 70, 240, 20, "Redownload existing files")
               SetGadgetState(downloadAllFilesGadget, ReadPreferenceInteger("RedownloadFiles", downloadAllFilesDefault))
               downloadVersionButton = ButtonGadget(#PB_Any, 5, 100, 240, 30, "Download")
 
@@ -306,41 +315,77 @@ If OpenWindow(0, #PB_Ignore, #PB_Ignore, windowWidth, windowHeight, "Vortex Mine
         Case settingsButton
           DisableGadget(settingsButton, 1)
 
-          If OpenWindow(3, #PB_Ignore, #PB_Ignore, 350, 240, "Vortex Launcher Settings")
-              argsTextGadget = TextGadget(#PB_Any, 5, 5, 80, 20, "Launch arguments:")
+          If OpenWindow(3, #PB_Ignore, #PB_Ignore, 350, 290, "Vortex Launcher Settings")
+              argsTextGadget = TextGadget(#PB_Any, 5, 5, 80, 30, "Launch parameters:")
               argsGadget = StringGadget(#PB_Any, 85, 5, 260, 30, ReadPreferenceString("LaunchArguments", customLaunchArgumentsDefault))
-              GadgetToolTip(argsGadget, "These arguments will be used to launch Minecraft")
+              GadgetToolTip(argsGadget, "These parameters will be used to launch Minecraft")
 
-              javaBinaryPathTextGadget = TextGadget(#PB_Any, 5, 45, 80, 20, "Path to Java binary:")
+              javaBinaryPathTextGadget = TextGadget(#PB_Any, 5, 45, 80, 30, "Path to Java:")
               javaPathGadget = StringGadget(#PB_Any, 85, 45, 260, 30, ReadPreferenceString("JavaPath", javaBinaryPathDefault))
               GadgetToolTip(javaPathGadget, "Absolute path to Java binary")
 
-              downloadThreadsTextGadget = TextGadget(#PB_Any, 5, 85, 80, 20, "Download threads:")
+              downloadThreadsTextGadget = TextGadget(#PB_Any, 5, 85, 80, 30, "Download threads:")
               downloadThreadsGadget = StringGadget(#PB_Any, 85, 85, 260, 30, ReadPreferenceString("DownloadThreads", Str(downloadThreadsAmountDefault)), #PB_String_Numeric)
               GadgetToolTip(downloadThreadsGadget, "Higher numbers may speedup downloads (works only with multi-threads downloads)")
               SetGadgetAttribute(downloadThreadsGadget, #PB_String_MaximumLength, 3)
 
-              asyncDownloadGadget = CheckBoxGadget(#PB_Any, 5, 125, 70, 20, "Fast multi-thread downloads (experimental)")
+              CheckBoxGadget(311, 5, 125, 340, 20, "Fast multi-thread downloads (experimental)")
+              asyncDownloadGadget = 311
               SetGadgetState(asyncDownloadGadget, ReadPreferenceInteger("AsyncDownload", asyncDownloadDefault))
 
-              downloadMissingLibrariesGadget = CheckBoxGadget(#PB_Any, 5, 150, 70, 20, "Download missing libraries on game start")
+              downloadMissingLibrariesGadget = CheckBoxGadget(#PB_Any, 5, 150, 340, 20, "Download missing libraries on game start")
               SetGadgetState(downloadMissingLibrariesGadget, ReadPreferenceInteger("DownloadMissingLibs", downloadMissingLibrariesDefault))
 
-              saveLaunchStringGadget = CheckBoxGadget(#PB_Any, 5, 175, 70, 20, "Save launch string to file")
+              saveLaunchStringGadget = CheckBoxGadget(#PB_Any, 5, 175, 340, 20, "Save launch string to file")
               GadgetToolTip(saveLaunchStringGadget, "Full launch string will be saved to launch_string.txt file")
               SetGadgetState(saveLaunchStringGadget, ReadPreferenceInteger("SaveLaunchString", saveLaunchStringDefault))
 
-              saveSettingsButton = ButtonGadget(#PB_Any, 5, 200, 340, 20, "Save and apply")
+              CheckBoxGadget(312, 5, 200, 340, 20, "Use custom Java")
+              useCustomJavaGadget = 312
+              GadgetToolTip(useCustomJavaGadget, "Use custom Java instead of installed one")
+              SetGadgetState(useCustomJavaGadget, ReadPreferenceInteger("UseCustomJava", useCustomJavaDefault))
+
+              CheckBoxGadget(313, 5, 225, 340, 20, "Use custom launch parameters")
+              useCustomParamsGadget = 313
+              GadgetToolTip(useCustomParamsGadget, "Use custom parameters to launch Minecraft")
+              SetGadgetState(useCustomParamsGadget, ReadPreferenceInteger("UseCustomParameters", useCustomParamsDefault))
+
+              saveSettingsButton = ButtonGadget(#PB_Any, 5, 250, 340, 20, "Save and apply")
+
+              DisableGadget(downloadThreadsGadget, Bool(Not GetGadgetState(asyncDownloadGadget)))
+              DisableGadget(javaPathGadget, Bool(Not GetGadgetState(useCustomJavaGadget)))
+              DisableGadget(argsGadget, Bool(Not GetGadgetState(useCustomParamsGadget)))
           EndIf
+        Case useCustomParamsGadget
+          DisableGadget(argsGadget, Bool(Not GetGadgetState(useCustomParamsGadget)))
+        Case asyncDownloadGadget
+		  If GetGadgetState(asyncDownloadGadget)
+			MessageRequester("Warning", "This option is experimental and may cause crashes." + #CRLF$ + #CRLF$ + "You have been warned!")
+		  EndIf
+
+          DisableGadget(downloadThreadsGadget, Bool(Not GetGadgetState(asyncDownloadGadget)))
+        Case useCustomJavaGadget
+          DisableGadget(javaPathGadget, Bool(Not GetGadgetState(useCustomJavaGadget)))
         Case saveSettingsButton
           If GetGadgetText(downloadThreadsGadget) = "0" : SetGadgetText(downloadThreadsGadget, "1") : EndIf
 
-          WritePreferenceString("LaunchArguments", GetGadgetText(argsGadget))
-          WritePreferenceString("JavaPath", GetGadgetText(javaPathGadget))
-          WritePreferenceString("DownloadThreads", GetGadgetText(downloadThreadsGadget))
           WritePreferenceInteger("DownloadMissingLibs", GetGadgetState(downloadMissingLibrariesGadget))
           WritePreferenceInteger("AsyncDownload", GetGadgetState(asyncDownloadGadget))
           WritePreferenceInteger("SaveLaunchString", GetGadgetState(saveLaunchStringGadget))
+          WritePreferenceInteger("UseCustomJava", GetGadgetState(useCustomJavaGadget))
+          WritePreferenceInteger("UseCustomParameters", GetGadgetState(useCustomParamsGadget))
+
+          If GetGadgetState(useCustomJavaGadget)
+            WritePreferenceString("JavaPath", GetGadgetText(javaPathGadget))
+          EndIf
+
+          If GetGadgetState(asyncDownloadGadget)
+            WritePreferenceString("DownloadThreads", GetGadgetText(downloadThreadsGadget))
+          EndIf
+
+          If GetGadgetState(useCustomParamsGadget)
+            WritePreferenceString("LaunchArguments", GetGadgetText(argsGadget))
+          EndIf
 
           downloadThreadsAmount = Val(GetGadgetText(downloadThreadsGadget))
           asyncDownload = GetGadgetState(asyncDownloadGadget)
@@ -412,6 +457,8 @@ Procedure findInstalledVersions()
   If Not CountGadgetItems(versionsGadget)
     DisableGadget(playButton, 1)
     DisableGadget(versionsGadget, 1) : AddGadgetItem(versionsGadget, 0, "Versions not found") : SetGadgetState(versionsGadget, 0)
+  Else
+	  generateProfileJson()
   EndIf
 EndProcedure
 
@@ -599,6 +646,7 @@ Procedure downloadFiles(downloadAllFiles.i)
 
                 httpArray(i) = ReceiveHTTPFile(StringField(string, 1, "::"), StringField(string, 2, "::"), #PB_HTTP_Asynchronous)
                 strings(i) = string
+                retries(i) = 0
 
                 currentDownloads + 1
               EndIf
@@ -687,12 +735,12 @@ Procedure downloadFiles(downloadAllFiles.i)
 EndProcedure
 
 Procedure progressWindow(clientVersion.s)
-  progressWindow = OpenWindow(#PB_Any, #PB_Ignore, #PB_Ignore, 230, 60, "Download progress")
+  progressWindow = OpenWindow(#PB_Any, #PB_Ignore, #PB_Ignore, 230, 80, "Download progress")
 
   If progressWindow
-    downloadingClientTextGadget = TextGadget(#PB_Any, 5, 5, 220, 20, "Downloading " + clientVersion)
-    filesLeft = TextGadget(#PB_Any, 5, 25, 220, 20, "Files left: unknown")
-    progressBar = ProgressBarGadget(#PB_Any, 5, 30, 220, 20, 0, 100, #PB_ProgressBar_Smooth)
+    downloadingClientTextGadget = TextGadget(#PB_Any, 5, 5, 220, 30, "Downloading " + clientVersion)
+    filesLeft = TextGadget(#PB_Any, 5, 30, 220, 30, "Files left: unknown")
+    progressBar = ProgressBarGadget(#PB_Any, 5, 50, 220, 20, 0, 100, #PB_ProgressBar_Smooth)
   EndIf
 EndProcedure
 
