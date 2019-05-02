@@ -1,5 +1,5 @@
 v1.1.0.1
-	* Create launcher_profile.json only when at least one version is avaiable
+	* Create launcher_profile.json only when at least one version is available
 	* Interface (GUI) improvements
 	* Fixed download failures detection
 	* Java existence checking improved
