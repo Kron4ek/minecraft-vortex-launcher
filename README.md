@@ -15,7 +15,7 @@ Fast, lightweight and easy to use Minecraft launcher. Natively available for Lin
 * Downloads missing libraries
 * Doesn't require Minecraft account
 * Doesn't require Java to work
-* Works fully offline (internet needed only for downloading clients and libraries)
+* Works fully offline (internet is only required for downloading)
 
 ---
 
