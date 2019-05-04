@@ -1,7 +1,7 @@
 v1.1.1
-	* Automatically download missing libraries if launcher_profile.json size has changed
-	* Create resources for old Minecraft versions
-	* Handle ${auth_session} and ${game_assets} parameters (required for old versions)
+	* Launcher now automatically downloads missing libraries if launcher_profile.json size has changed
+	* Added creating resources for old Minecraft versions
+	* Added handling of ${auth_session} and ${game_assets} parameters (required for old Minecraft versions)
 	* Fixed rare crashes when selecting version in Downloader
 	* Added OK button to "Download progress" window
 	* Fixed finding Minecraft versions when additional files present in versions directory
