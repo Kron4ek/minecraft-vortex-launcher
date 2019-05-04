@@ -3,6 +3,7 @@ EnableExplicit
 Define.s workingDirectory = GetPathPart(ProgramFilename())
 
 Global Dim programFilesDir.s(1)
+Global.i downloadOkButton
 Global.i downloadThread
 Global.i downloadThreadsAmount
 Global.i asyncDownload
@@ -22,6 +23,7 @@ Define.s assetsIndex, clientMainClass, clientArguments, inheritsClientJar, custo
 Define.i downloadMissingLibraries, jsonArgumentsMember, jsonArgumentsModernMember, jsonInheritsFromMember
 Define.i downloadMissingLibrariesGadget, downloadThreadsGadget, asyncDownloadGadget, saveSettingsButton, useCustomJavaGadget, useCustomParamsGadget
 Define.i i
+Define.i profilesJsonSize
 
 Define.s playerNameDefault = "Name", ramAmountDefault = "1024"
 Define.s customLaunchArgumentsDefault = "-Xss1M -XX:+UnlockExperimentalVMOptions -XX:+UseG1GC -XX:G1NewSizePercent=20 -XX:G1ReservePercent=20 -XX:MaxGCPauseMillis=50 -XX:G1HeapRegionSize=16M"
@@ -35,9 +37,10 @@ Define.i useCustomParamsDefault = 0
 Global.i useCustomJavaDefault = 0
 Global.s javaBinaryPathDefault = "C:\jre8\bin\javaw.exe"
 
-Define.s launcherVersion = "1.1.0.1"
+Define.s launcherVersion = "1.1.1"
 Define.s launcherDeveloper = "Kron(4ek)"
 
+Declare assetsToResources(assetsIndex.s)
 Declare findJava()
 Declare progressWindow(clientVersion.s)
 Declare findInstalledVersions()
@@ -89,7 +92,7 @@ If OpenWindow(0, #PB_Ignore, #PB_Ignore, windowWidth, windowHeight, "Vortex Mine
   EndIf
 
   launcherAuthorGadget = TextGadget(#PB_Any, 2, windowHeight - 10, 70, 20, "by " + launcherDeveloper)
-  launcherVersionGadget = TextGadget(#PB_Any, windowWidth - 37, windowHeight - 10, 50, 20, "v" + launcherVersion)
+  launcherVersionGadget = TextGadget(#PB_Any, windowWidth - 29, windowHeight - 10, 50, 20, "v" + launcherVersion)
   If LoadFont(1, "Ariral", 7)
     font = FontID(1) : SetGadgetFont(launcherAuthorGadget, font) : SetGadgetFont(launcherVersionGadget, font)
   EndIf
@@ -109,6 +112,15 @@ If OpenWindow(0, #PB_Ignore, #PB_Ignore, windowWidth, windowHeight, "Vortex Mine
           javaBinaryPath = GetGadgetText(javaListGadget)
           customLaunchArguments = customLaunchArgumentsDefault
           downloadMissingLibraries = ReadPreferenceInteger("DownloadMissingLibs", downloadMissingLibrariesDefault)
+          profilesJsonSize = ReadPreferenceInteger("LastProfilesJsonSize", 0)
+
+          If profilesJsonSize
+            If FileSize("launcher_profiles.json") <> profilesJsonSize
+              downloadMissingLibraries = 1
+            EndIf
+          EndIf
+
+          WritePreferenceInteger("LastProfilesJsonSize", FileSize("launcher_profiles.json"))
 
           If ReadPreferenceInteger("UseCustomParameters", useCustomParamsDefault)
             customLaunchArguments = ReadPreferenceString("LaunchArguments", customLaunchArgumentsDefault)
@@ -210,6 +222,12 @@ If OpenWindow(0, #PB_Ignore, #PB_Ignore, windowWidth, windowHeight, "Vortex Mine
                   clientArguments = ReplaceString(clientArguments, "${user_type}", "mojang")
                   clientArguments = ReplaceString(clientArguments, "${version_type}", "client")
                   clientArguments = ReplaceString(clientArguments, "${assets_index_name}", assetsIndex)
+                  clientArguments = ReplaceString(clientArguments, "${auth_session}", generateGuid())
+                  clientArguments = ReplaceString(clientArguments, "${game_assets}", "resources")
+
+                  If assetsIndex = "pre-1.6" Or assetsIndex = "legacy"
+                    assetsToResources(assetsIndex)
+                  EndIf
 
                   If downloadMissingLibraries
                     downloadFiles(0)
@@ -223,7 +241,7 @@ If OpenWindow(0, #PB_Ignore, #PB_Ignore, windowWidth, windowHeight, "Vortex Mine
                   If saveLaunchString
                     launchStringFile = OpenFile(#PB_Any, "launch_string.txt")
 
-                    WriteString(launchStringFile, javaBinaryPath + " " + fullLaunchString)
+                    WriteString(launchStringFile, Chr(34) + javaBinaryPath + Chr(34) + " " + fullLaunchString)
 
                     CloseFile(launchStringFile)
                   EndIf
@@ -251,7 +269,8 @@ If OpenWindow(0, #PB_Ignore, #PB_Ignore, windowWidth, windowHeight, "Vortex Mine
             If OpenWindow(1, #PB_Ignore, #PB_Ignore, 200, 120, "Client Downloader")
               DisableGadget(downloadButton, 1)
 
-              versionsDownloadGadget = ComboBoxGadget(#PB_Any, 5, 5, 190, 25)
+              ComboBoxGadget(325, 5, 5, 190, 25)
+              versionsDownloadGadget = 325
               CheckBoxGadget(110, 5, 40, 130, 20, "Show all versions")
               versionsTypeGadget = 110
               SetGadgetState(versionsTypeGadget, ReadPreferenceInteger("ShowAllVersions", versionsTypeDefault))
@@ -403,6 +422,11 @@ If OpenWindow(0, #PB_Ignore, #PB_Ignore, windowWidth, windowHeight, "Vortex Mine
 
           downloadThreadsAmount = Val(GetGadgetText(downloadThreadsGadget))
           asyncDownload = GetGadgetState(asyncDownloadGadget)
+        Case downloadOkButton
+          CloseWindow(progressWindow)
+
+          If IsGadget(playButton) : DisableGadget(playButton, 0) : EndIf
+          If IsGadget(downloadVersionButton) : DisableGadget(downloadVersionButton, 0) : EndIf
       EndSelect
     EndIf
 
@@ -445,16 +469,18 @@ Procedure findInstalledVersions()
   DisableGadget(versionsGadget, 0)
 
   If directory
-    While NextDirectoryEntry(directory) And DirectoryEntryType(directory) = #PB_DirectoryEntry_Directory
-      dirName = DirectoryEntryName(directory)
+    While NextDirectoryEntry(directory)
+      If DirectoryEntryType(directory) = #PB_DirectoryEntry_Directory
+        dirName = DirectoryEntryName(directory)
 
-      If dirName <> ".." And dirName <> "."
-        If FileSize("versions\" + dirName + "\" + dirName + ".json") > -1
-          If Not chosenFound And dirName = chosenVer
-            chosenFound = 1
+        If dirName <> ".." And dirName <> "."
+          If FileSize("versions\" + dirName + "\" + dirName + ".json") > -1
+            If Not chosenFound And dirName = chosenVer
+              chosenFound = 1
+            EndIf
+
+            AddGadgetItem(versionsGadget, -1, dirName)
           EndIf
-
-          AddGadgetItem(versionsGadget, -1, dirName)
         EndIf
       EndIf
     Wend
@@ -505,14 +531,14 @@ Procedure.s parseVersionsManifest(versionType.i = 0, getClientJarUrl.i = 0, clie
         EndIf
        EndIf
     Next
+
+    FreeJSON(jsonFile)
   Else
     AddGadgetItem(versionsDownloadGadget, -1, "Error")
     DisableGadget(downloadVersionButton, 1)
   EndIf
 
   SetGadgetState(versionsDownloadGadget, 0)
-
-  FreeJSON(jsonFile)
 EndProcedure
 
 Procedure.s parseLibraries(clientVersion.s, prepareForDownload.i = 0)
@@ -687,16 +713,10 @@ Procedure downloadFiles(downloadAllFiles.i)
         Next
 
         If IsGadget(progressBar) : SetGadgetState(progressBar, lines) : EndIf
-        If IsGadget(filesLeft) : SetGadgetText(filesLeft, "Files left: " + lines): EndIf
+        If IsGadget(filesLeft) : SetGadgetText(filesLeft, "Files remaining: " + lines): EndIf
 
         Delay(500)
       Wend
-
-      If failedDownloads
-        If IsGadget(filesLeft) : SetGadgetText(filesLeft, "Download failed! Files left: " + lines) : EndIf
-      Else
-        If IsGadget(filesLeft) : SetGadgetText(filesLeft, "Download completed!") : EndIf
-      EndIf
     Else
       While Eof(file) = 0
         string = ReadString(file)
@@ -728,15 +748,18 @@ Procedure downloadFiles(downloadAllFiles.i)
         EndIf
 
         If IsGadget(progressBar) : SetGadgetState(progressBar, lines) : EndIf
-        If IsGadget(filesLeft) : SetGadgetText(filesLeft, "Files left: " + lines) : EndIf
+        If IsGadget(filesLeft) : SetGadgetText(filesLeft, "Files remaining: " + lines) : EndIf
       Wend
     EndIf
 
     If failedDownloads
-      If IsGadget(filesLeft) : SetGadgetText(filesLeft, "Download failed! Files left: " + lines) : EndIf
+      If IsGadget(filesLeft) : SetGadgetText(filesLeft, "Download failed! " + lines + " files left.") : EndIf
     Else
-      If IsGadget(filesLeft) : SetGadgetText(filesLeft, "Download completed!") : EndIf
+      If IsGadget(filesLeft) : SetGadgetText(filesLeft, "Download complete!") : EndIf
     EndIf
+
+    If IsGadget(progressBar) : HideGadget(progressBar, 1) : EndIf
+    If IsGadget(downloadOkButton) : HideGadget(downloadOkButton, 0) : EndIf
 
     ClearGadgetItems(versionsGadget)
     findInstalledVersions()
@@ -749,12 +772,15 @@ Procedure downloadFiles(downloadAllFiles.i)
 EndProcedure
 
 Procedure progressWindow(clientVersion.s)
-  progressWindow = OpenWindow(#PB_Any, #PB_Ignore, #PB_Ignore, 230, 70, "Download progress")
+  progressWindow = OpenWindow(#PB_Any, #PB_Ignore, #PB_Ignore, 230, 85, "Download progress")
 
   If progressWindow
-    downloadingClientTextGadget = TextGadget(#PB_Any, 5, 5, 220, 20, "Downloading " + clientVersion)
-    filesLeft = TextGadget(#PB_Any, 5, 25, 220, 20, "Files left: unknown")
-    progressBar = ProgressBarGadget(#PB_Any, 5, 45, 220, 20, 0, 100, #PB_ProgressBar_Smooth)
+    downloadingClientTextGadget = TextGadget(#PB_Any, 5, 5, 220, 20, "Version: " + clientVersion)
+    filesLeft = TextGadget(#PB_Any, 5, 25, 220, 20, "Files remaining: unknown")
+    progressBar = ProgressBarGadget(#PB_Any, 5, 50, 220, 20, 0, 100, #PB_ProgressBar_Smooth)
+    downloadOkButton = ButtonGadget(#PB_Any, 5, 50, 220, 30, "OK")
+
+    HideGadget(downloadOkButton, 1)
   EndIf
 EndProcedure
 
@@ -866,5 +892,35 @@ Procedure findJava()
       DisableGadget(javaListGadget, 1)
       DisableGadget(playButton, 1)
     EndIf
+  EndIf
+EndProcedure
+
+Procedure assetsToResources(assetsIndex.s)
+  Protected.i jsonFile, jsonObject, jsonObjectObjects, fileSize
+  Protected.s fileHash, fileName
+
+  jsonFile = ParseJSON(#PB_Any, fileRead("assets\indexes\" + assetsIndex + ".json"))
+
+  If jsonFile
+    jsonObject = JSONValue(jsonFile)
+    jsonObjectObjects = GetJSONMember(jsonObject, "objects")
+
+    If ExamineJSONMembers(jsonObjectObjects)
+      While NextJSONMember(jsonObjectObjects)
+        fileHash = GetJSONString(GetJSONMember(GetJSONMember(jsonObjectObjects, JSONMemberKey(jsonObjectObjects)), "hash"))
+        fileSize = GetJSONInteger(GetJSONMember(GetJSONMember(jsonObjectObjects, JSONMemberKey(jsonObjectObjects)), "size"))
+        fileName = JSONMemberKey(jsonObjectObjects)
+
+		fileName = ReplaceString(fileName, "/", "\")
+
+        If FileSize("resources\" + fileName) <> fileSize
+          CreateDirectoryRecursive("resources\" + GetPathPart(fileName))
+
+          CopyFile("assets\objects\" + Left(fileHash, 2) + "\" + fileHash, "resources\" + fileName)
+        EndIf
+      Wend
+    EndIf
+
+    FreeJSON(jsonFile)
   EndIf
 EndProcedure
