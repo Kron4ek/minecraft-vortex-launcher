@@ -1,3 +1,10 @@
+v1.1.1
+	* Automatically download missing libraries if launcher_profile.json size has changed
+	* Create resources for old Minecraft versions
+	* Fixed rare crashes when selecting version in Downloader
+	* Added OK button to "Download progress" window
+	* Fixed finding Minecraft versions when additional files present in versions directory
+---------------------------------------------------------------------
 v1.1.0.1
 	* Create launcher_profile.json only when at least one version is available
 	* Interface (GUI) improvements
