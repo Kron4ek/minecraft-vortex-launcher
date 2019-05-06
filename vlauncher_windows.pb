@@ -10,7 +10,9 @@ Global.i asyncDownload
 Global.i versionsGadget, playButton, javaListGadget
 Global.i progressBar, filesLeft, progressWindow, downloadingClientTextGadget
 Global.i versionsDownloadGadget, downloadVersionButton
+Global.i forceDownloadMissingLibraries
 
+Define.i javaProgram
 Define.i Event, font, ramGadget, nameGadget, javaPathGadget, argsGadget, downloadButton, settingsButton, launcherVersionGadget, launcherAuthorGadget
 Define.i saveLaunchString, versionsTypeGadget, saveLaunchStringGadget, launchStringFile, inheritsJsonObject, jsonInheritsArgumentsModernMember
 Define.i argsTextGadget, javaBinaryPathTextGadget, downloadThreadsTextGadget, downloadAllFilesGadget, javaPathGadget
@@ -23,7 +25,6 @@ Define.s assetsIndex, clientMainClass, clientArguments, inheritsClientJar, custo
 Define.i downloadMissingLibraries, jsonArgumentsMember, jsonArgumentsModernMember, jsonInheritsFromMember
 Define.i downloadMissingLibrariesGadget, downloadThreadsGadget, asyncDownloadGadget, saveSettingsButton, useCustomJavaGadget, useCustomParamsGadget
 Define.i i
-Define.i profilesJsonSize
 
 Define.s playerNameDefault = "Name", ramAmountDefault = "1024"
 Define.s customLaunchArgumentsDefault = "-Xss1M -XX:+UnlockExperimentalVMOptions -XX:+UseG1GC -XX:G1NewSizePercent=20 -XX:G1ReservePercent=20 -XX:MaxGCPauseMillis=50 -XX:G1HeapRegionSize=16M"
@@ -37,7 +38,7 @@ Define.i useCustomParamsDefault = 0
 Global.i useCustomJavaDefault = 0
 Global.s javaBinaryPathDefault = "C:\jre8\bin\javaw.exe"
 
-Define.s launcherVersion = "1.1.1"
+Define.s launcherVersion = "1.1.2"
 Define.s launcherDeveloper = "Kron(4ek)"
 
 Declare assetsToResources(assetsIndex.s)
@@ -52,6 +53,7 @@ Declare.s generateGuid()
 Declare.s parseVersionsManifest(versionType.i = 0, getClientJarUrl.i = 0, clientVersion.s = "")
 Declare.s parseLibraries(clientVersion.s, prepareForDownload.i = 0)
 Declare.s fileRead(pathToFile.s)
+Declare.s removeSpacesFromVersionName(clientVersion.s)
 
 programFilesDir(0) = GetEnvironmentVariable("ProgramW6432") + "\"
 programFilesDir(1) = GetEnvironmentVariable("PROGRAMFILES") + "\"
@@ -77,7 +79,8 @@ If OpenWindow(0, #PB_Ignore, #PB_Ignore, windowWidth, windowHeight, "Vortex Mine
   SetGadgetAttribute(nameGadget, #PB_String_MaximumLength, 16)
 
   ramGadget = StringGadget(#PB_Any, gadgetsIndent, 35, gadgetsWidth, gadgetsHeight, ReadPreferenceString("Ram", ramAmountDefault), #PB_String_Numeric)
-  GadgetToolTip(ramGadget, "Amount of RAM (in MB) to allocate for Minecraft")
+  GadgetToolTip(ramGadget, "Amount (megabytes) of memory to allocate for Minecraft")
+  SetGadgetAttribute(ramGadget, #PB_String_MaximumLength, 6)
 
   versionsGadget = ComboBoxGadget(#PB_Any, gadgetsIndent, 65, gadgetsWidth, gadgetsHeight)
   javaListGadget = ComboBoxGadget(#PB_Any, gadgetsIndent, 95, gadgetsWidth, gadgetsHeight)
@@ -112,25 +115,24 @@ If OpenWindow(0, #PB_Ignore, #PB_Ignore, windowWidth, windowHeight, "Vortex Mine
           javaBinaryPath = GetGadgetText(javaListGadget)
           customLaunchArguments = customLaunchArgumentsDefault
           downloadMissingLibraries = ReadPreferenceInteger("DownloadMissingLibs", downloadMissingLibrariesDefault)
-          profilesJsonSize = ReadPreferenceInteger("LastProfilesJsonSize", 0)
 
-          If profilesJsonSize
-            If FileSize("launcher_profiles.json") <> profilesJsonSize
-              downloadMissingLibraries = 1
-            EndIf
+          If FindString(clientVersion, " ")
+            clientVersion = removeSpacesFromVersionName(clientVersion)
           EndIf
 
-          WritePreferenceInteger("LastProfilesJsonSize", FileSize("launcher_profiles.json"))
+          If forceDownloadMissingLibraries
+            downloadMissingLibraries = 1
+          EndIf
+
+          If FindString(playerName, " ")
+            playerName = ReplaceString(playerName, " ", "")
+          EndIf
 
           If ReadPreferenceInteger("UseCustomParameters", useCustomParamsDefault)
             customLaunchArguments = ReadPreferenceString("LaunchArguments", customLaunchArgumentsDefault)
           EndIf
 
           If playerName And ramAmount And Len(playerName) >= 3
-            WritePreferenceString("Name", playerName)
-            WritePreferenceString("Ram", ramAmount)
-            WritePreferenceString("ChosenVer", clientVersion)
-
             If ReadPreferenceInteger("UseCustomJava", useCustomJavaDefault)
               javaBinaryPath = ReadPreferenceString("JavaPath", javaBinaryPathDefault)
             ElseIf FindString(javaBinaryPath, " (x32)")
@@ -138,6 +140,26 @@ If OpenWindow(0, #PB_Ignore, #PB_Ignore, windowWidth, windowHeight, "Vortex Mine
             Else
               javaBinaryPath = programFilesDir(0) + "Java\" + javaBinaryPath + "\bin\javaw.exe"
             EndIf
+
+            javaProgram = RunProgram(ReplaceString(javaBinaryPath, "javaw", "java"), "-d64 -version", workingDirectory, #PB_Program_Open | #PB_Program_Wait | #PB_Program_Hide)
+
+            If javaProgram
+              If ProgramExitCode(javaProgram) And Val(ramAmount) > 1300
+                ramAmount = "1300"
+
+                MessageRequester("Warning", "You're using 32-bit Java and allocating more than 1300 MB of memory (RAM)!" + #CRLF$ + #CRLF$ + "Allocated memory set to 1300 MB to prevent crashes." + #CRLF$ + #CRLF$ + "Use 64-bit Java if you want to allocate more memory.")
+              EndIf
+            EndIf
+
+            If Val(ramAmount) < 350
+              ramAmount = "350"
+
+              MessageRequester("Warning", "You allocated too low amount of memory!" + #CRLF$ + #CRLF$ + "Allocated memory set to 350 MB to prevent crashes.")
+            EndIf
+
+            WritePreferenceString("Name", playerName)
+            WritePreferenceString("Ram", ramAmount)
+            WritePreferenceString("ChosenVer", clientVersion)
 
             If RunProgram(javaBinaryPath, "-version", workingDirectory)
               jsonFile = ParseJSON(#PB_Any, fileRead("versions\" + clientVersion + "\" + clientVersion + ".json"))
@@ -260,7 +282,13 @@ If OpenWindow(0, #PB_Ignore, #PB_Ignore, windowWidth, windowHeight, "Vortex Mine
               MessageRequester("Error", "Java not found! Check if Java installed." + #CRLF$ + #CRLF$ + "Or check if path to Java binary is correct.")
             EndIf
           Else
-            MessageRequester("Error", "Name or RAM amount is incorrect!")
+            If playerName = ""
+			  MessageRequester("Error", "Enter your desired name.")
+            ElseIf ramAmount = ""
+              MessageRequester("Error", "Enter RAM amount.")
+            ElseIf Len(playerName) < 3
+              MessageRequester("Error", "Name is too short! Minimum length is 3.")
+            EndIf
           EndIf
         Case downloadButton
           InitNetwork()
@@ -769,6 +797,7 @@ Procedure downloadFiles(downloadAllFiles.i)
 
   FreeArray(httpArray())
   FreeArray(strings())
+  DeleteFile("download_list.txt")
 EndProcedure
 
 Procedure progressWindow(clientVersion.s)
@@ -799,11 +828,14 @@ Procedure CreateDirectoryRecursive(path.s)
 EndProcedure
 
 Procedure generateProfileJson()
+  Protected.s fileName = "launcher_profiles.json"
   Protected.i file
+  Protected.i lastProfilesJsonSize = ReadPreferenceInteger("LastProfilesJsonSize", 89)
+  Protected.i fileSize = FileSize(fileName)
 
-  If FileSize("launcher_profiles.json") <= 0
-    DeleteFile("launcher_profile.json")
-    file = OpenFile(#PB_Any, "launcher_profiles.json")
+  If fileSize <= 0
+    DeleteFile(fileName)
+    file = OpenFile(#PB_Any, fileName)
 
     If file
       WriteString(file, "{ " + Chr(34) + "profiles" + Chr(34) + ": { " + Chr(34) + "justProfile" + Chr(34) + ": { " + Chr(34) + "name" + Chr(34) + ": " + Chr(34) + "justProfile" + Chr(34) + ", ")
@@ -812,6 +844,14 @@ Procedure generateProfileJson()
       CloseFile(file)
     EndIf
   EndIf
+
+  fileSize = FileSize(fileName)
+
+  If fileSize <> lastProfilesJsonSize
+    forceDownloadMissingLibraries = 1
+  EndIf
+
+  WritePreferenceInteger("LastProfilesJsonSize", fileSize)
 EndProcedure
 
 Procedure.s generateGuid()
@@ -923,4 +963,14 @@ Procedure assetsToResources(assetsIndex.s)
 
     FreeJSON(jsonFile)
   EndIf
+EndProcedure
+
+Procedure.s removeSpacesFromVersionName(clientVersion.s)
+  Protected.s newVersionName = ReplaceString(clientVersion, " ", "-")
+
+  RenameFile("versions\" + clientVersion + "\" + clientVersion + ".jar", "versions\" + clientVersion + "\" + newVersionName + ".jar")
+  RenameFile("versions\" + clientVersion + "\" + clientVersion + ".json", "versions\" + clientVersion + "\" + newVersionName + ".json")
+  RenameFile("versions\" + clientVersion, "versions\" + newVersionName)
+
+  ProcedureReturn newVersionName
 EndProcedure
