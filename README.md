@@ -10,12 +10,12 @@ Fast, lightweight and easy to use Minecraft launcher. Natively available for Lin
 * Open-Source
 * Cross-Platform (currently available for Windows and Linux)
 * Runs any Minecraft versions
-* Runs Forge and other APIs
+* Supports Forge and other APIs
 * Downloads any Minecraft versions
 * Downloads missing libraries
 * Doesn't require Minecraft account
 * Doesn't require Java to work
-* Works fully offline (internet is only required for downloading)
+* Can work fully offline (internet is only required for downloading)
 
 ---
 
@@ -30,3 +30,9 @@ Fast, lightweight and easy to use Minecraft launcher. Natively available for Lin
 ## License
 
 [GPLv3](https://github.com/Kron4ek/minecraft-vortex-launcher/blob/master/LICENSE.txt)
+
+---
+
+### Mirrors
+
+Mirror on GitLab: https://gitlab.com/Kron4ek/vortex-minecraft-launcher
