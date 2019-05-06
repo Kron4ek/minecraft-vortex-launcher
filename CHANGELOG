@@ -1,3 +1,10 @@
+v1.1.2
+	* Fixed launching versions with spaces in name
+	* Prevent to allocate more than 1.5 GB of memory when using 32-bit Java
+	* Prevent to allocate too low ammount of memory
+	* Remove spaces from name
+	* Additional fixes
+---------------------------------------------------------------------
 v1.1.1
 	* Launcher now automatically downloads missing libraries if launcher_profile.json size has changed
 	* Added creating resources for old Minecraft versions
