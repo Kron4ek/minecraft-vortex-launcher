@@ -1,7 +1,7 @@
 v1.1.2
 	* Fixed launching versions with spaces in name
 	* Prevent to allocate more than 1.5 GB of memory when using 32-bit Java
-	* Prevent to allocate too low ammount of memory
+	* Prevent to allocate too low amount of memory
 	* Remove spaces from name
 	* Additional fixes
 ---------------------------------------------------------------------
