@@ -38,7 +38,7 @@ Define.i useCustomParamsDefault = 0
 Global.i useCustomJavaDefault = 0
 Global.s javaBinaryPathDefault = "C:\jre8\bin\javaw.exe"
 
-Define.s launcherVersion = "1.1.2"
+Define.s launcherVersion = "1.1.3"
 Define.s launcherDeveloper = "Kron(4ek)"
 
 Declare assetsToResources(assetsIndex.s)
@@ -49,7 +49,6 @@ Declare downloadFiles(downloadAllFiles.i)
 Declare CreateDirectoryRecursive(path.s)
 Declare generateProfileJson()
 
-Declare.s generateGuid()
 Declare.s parseVersionsManifest(versionType.i = 0, getClientJarUrl.i = 0, clientVersion.s = "")
 Declare.s parseLibraries(clientVersion.s, prepareForDownload.i = 0)
 Declare.s fileRead(pathToFile.s)
@@ -238,13 +237,13 @@ If OpenWindow(0, #PB_Ignore, #PB_Ignore, windowWidth, windowHeight, "Vortex Mine
                   clientArguments = ReplaceString(clientArguments, "${version_name}", clientVersion)
                   clientArguments = ReplaceString(clientArguments, "${game_directory}", workingDirectory)
                   clientArguments = ReplaceString(clientArguments, "${assets_root}", "assets")
-                  clientArguments = ReplaceString(clientArguments, "${auth_uuid}", generateGuid())
-                  clientArguments = ReplaceString(clientArguments, "${auth_access_token}", generateGuid())
+                  clientArguments = ReplaceString(clientArguments, "${auth_uuid}", "00000000-0000-0000-0000-000000000000")
+                  clientArguments = ReplaceString(clientArguments, "${auth_access_token}", "00000000-0000-0000-0000-000000000000")
                   clientArguments = ReplaceString(clientArguments, "${user_properties}", "{}")
                   clientArguments = ReplaceString(clientArguments, "${user_type}", "mojang")
                   clientArguments = ReplaceString(clientArguments, "${version_type}", "client")
                   clientArguments = ReplaceString(clientArguments, "${assets_index_name}", assetsIndex)
-                  clientArguments = ReplaceString(clientArguments, "${auth_session}", generateGuid())
+                  clientArguments = ReplaceString(clientArguments, "${auth_session}", "00000000-0000-0000-0000-000000000000")
                   clientArguments = ReplaceString(clientArguments, "${game_assets}", "resources")
 
                   If assetsIndex = "pre-1.6" Or assetsIndex = "legacy"
@@ -852,21 +851,6 @@ Procedure generateProfileJson()
   EndIf
 
   WritePreferenceInteger("LastProfilesJsonSize", fileSize)
-EndProcedure
-
-Procedure.s generateGuid()
-  Protected.s guid
-  Protected.i i
-
-  For i = 0 To 32 - 1
-    guid + Chr(Asc(Hex(Random(15))))
-
-    If i = 7 Or i = 11 Or i = 15 Or i = 19
-      guid + "-"
-    EndIf
-  Next
-
-  ProcedureReturn LCase(guid)
 EndProcedure
 
 Procedure.s fileRead(pathToFile.s)
