@@ -9,13 +9,13 @@ Fast, lightweight and easy to use Minecraft launcher. Natively available for Lin
 * Lightweight and fast
 * Open-Source
 * Cross-Platform (currently available for Windows and Linux)
-* Runs any Minecraft versions
+* Supports all Minecraft versions
 * Supports Forge and other APIs
-* Downloads any Minecraft versions
+* Downloads all Minecraft versions
 * Downloads missing libraries
 * Doesn't require Minecraft account
 * Doesn't require Java to work
-* Can work fully offline (internet is only required for downloading)
+* Can work fully offline
 
 ---
 
