@@ -38,7 +38,7 @@ Define.i useCustomParamsDefault = 0
 Global.i useCustomJavaDefault = 0
 Global.s javaBinaryPathDefault = "C:\jre8\bin\javaw.exe"
 
-Define.s launcherVersion = "1.1.3"
+Define.s launcherVersion = "1.1.3.1"
 Define.s launcherDeveloper = "Kron(4ek)"
 
 Declare assetsToResources(assetsIndex.s)
@@ -94,7 +94,7 @@ If OpenWindow(0, #PB_Ignore, #PB_Ignore, windowWidth, windowHeight, "Vortex Mine
   EndIf
 
   launcherAuthorGadget = TextGadget(#PB_Any, 2, windowHeight - 10, 70, 20, "by " + launcherDeveloper)
-  launcherVersionGadget = TextGadget(#PB_Any, windowWidth - 29, windowHeight - 10, 50, 20, "v" + launcherVersion)
+  launcherVersionGadget = TextGadget(#PB_Any, windowWidth - 37, windowHeight - 10, 50, 20, "v" + launcherVersion)
   If LoadFont(1, "Ariral", 7)
     font = FontID(1) : SetGadgetFont(launcherAuthorGadget, font) : SetGadgetFont(launcherVersionGadget, font)
   EndIf
@@ -622,7 +622,7 @@ Procedure.s parseLibraries(clientVersion.s, prepareForDownload.i = 0)
           jsonUrlMember = GetJSONMember(jsonArrayElement, "url")
 
           If jsonUrlMember
-            url = GetJSONString(jsonUrlMember) + libName + ".jar"
+            url = GetJSONString(jsonUrlMember) + ReplaceString(libName, "\", "/") + ".jar"
           Else
             url = "https://libraries.minecraft.net/" + ReplaceString(libName, "\", "/") + ".jar"
           EndIf
