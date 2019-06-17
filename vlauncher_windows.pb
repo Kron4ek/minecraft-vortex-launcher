@@ -1,6 +1,7 @@
 EnableExplicit
 
 Define.s workingDirectory = GetPathPart(ProgramFilename())
+Global.s tempDirectory = GetTemporaryDirectory()
 
 Global Dim programFilesDir.s(1)
 Global.i downloadOkButton
@@ -11,7 +12,9 @@ Global.i versionsGadget, playButton, javaListGadget
 Global.i progressBar, filesLeft, progressWindow, downloadingClientTextGadget
 Global.i versionsDownloadGadget, downloadVersionButton
 Global.i forceDownloadMissingLibraries
+Global.s versionsManifestString
 
+Define *FileBuffer
 Define.i javaProgram
 Define.i Event, font, ramGadget, nameGadget, javaPathGadget, argsGadget, downloadButton, settingsButton, launcherVersionGadget, launcherAuthorGadget
 Define.i saveLaunchString, versionsTypeGadget, saveLaunchStringGadget, launchStringFile, inheritsJsonObject, jsonInheritsArgumentsModernMember
@@ -28,6 +31,7 @@ Define.i i
 
 Define.s playerNameDefault = "Name", ramAmountDefault = "1024"
 Define.s customLaunchArgumentsDefault = "-Xss1M -XX:+UnlockExperimentalVMOptions -XX:+UseG1GC -XX:G1NewSizePercent=20 -XX:G1ReservePercent=20 -XX:MaxGCPauseMillis=50 -XX:G1HeapRegionSize=16M"
+Define.s customOldLaunchArgumentsDefault = "-XX:+UseConcMarkSweepGC -XX:+CMSIncrementalMode -XX:-UseAdaptiveSizePolicy -Xmn128M"
 Define.i downloadThreadsAmountDefault = 50
 Define.i asyncDownloadDefault = 0
 Define.i downloadMissingLibrariesDefault = 0
@@ -38,7 +42,7 @@ Define.i useCustomParamsDefault = 0
 Global.i useCustomJavaDefault = 0
 Global.s javaBinaryPathDefault = "C:\jre8\bin\javaw.exe"
 
-Define.s launcherVersion = "1.1.3.1"
+Define.s launcherVersion = "1.1.4"
 Define.s launcherDeveloper = "Kron(4ek)"
 
 Declare assetsToResources(assetsIndex.s)
@@ -63,7 +67,7 @@ OpenPreferences("vortex_launcher.conf")
 downloadThreadsAmount = ReadPreferenceInteger("DownloadThreads", downloadThreadsAmountDefault)
 asyncDownload = ReadPreferenceInteger("AsyncDownload", asyncDownloadDefault)
 
-DeleteFile("version_manifest.json") : DeleteFile("download_list.txt")
+DeleteFile(tempDirectory + "vlauncher_download_list.txt")
 
 windowWidth = 250
 windowHeight = 250
@@ -94,7 +98,7 @@ If OpenWindow(0, #PB_Ignore, #PB_Ignore, windowWidth, windowHeight, "Vortex Mine
   EndIf
 
   launcherAuthorGadget = TextGadget(#PB_Any, 2, windowHeight - 10, 70, 20, "by " + launcherDeveloper)
-  launcherVersionGadget = TextGadget(#PB_Any, windowWidth - 37, windowHeight - 10, 50, 20, "v" + launcherVersion)
+  launcherVersionGadget = TextGadget(#PB_Any, windowWidth - 32, windowHeight - 10, 50, 20, "v" + launcherVersion)
   If LoadFont(1, "Ariral", 7)
     font = FontID(1) : SetGadgetFont(launcherAuthorGadget, font) : SetGadgetFont(launcherVersionGadget, font)
   EndIf
@@ -112,8 +116,13 @@ If OpenWindow(0, #PB_Ignore, #PB_Ignore, windowWidth, windowHeight, "Vortex Mine
           clientVersion = GetGadgetText(versionsGadget)
           playerName = GetGadgetText(nameGadget)
           javaBinaryPath = GetGadgetText(javaListGadget)
-          customLaunchArguments = customLaunchArgumentsDefault
           downloadMissingLibraries = ReadPreferenceInteger("DownloadMissingLibs", downloadMissingLibrariesDefault)
+
+          If Val(StringField(clientVersion, 2, ".")) < 13
+            customLaunchArguments = customOldLaunchArgumentsDefault
+          Else
+            customLaunchArguments = customLaunchArgumentsDefault
+          EndIf
 
           If FindString(clientVersion, " ")
             clientVersion = removeSpacesFromVersionName(clientVersion)
@@ -131,23 +140,13 @@ If OpenWindow(0, #PB_Ignore, #PB_Ignore, windowWidth, windowHeight, "Vortex Mine
             customLaunchArguments = ReadPreferenceString("LaunchArguments", customLaunchArgumentsDefault)
           EndIf
 
-          If playerName And ramAmount And Len(playerName) >= 3
+          If ramAmount And Len(playerName) >= 3
             If ReadPreferenceInteger("UseCustomJava", useCustomJavaDefault)
               javaBinaryPath = ReadPreferenceString("JavaPath", javaBinaryPathDefault)
-            ElseIf FindString(javaBinaryPath, " (x32)")
+            ElseIf Right(javaBinaryPath, 5) = "(x32)"
               javaBinaryPath = programFilesDir(1) + "Java\" + RemoveString(javaBinaryPath, " (x32)") + "\bin\javaw.exe"
             Else
               javaBinaryPath = programFilesDir(0) + "Java\" + javaBinaryPath + "\bin\javaw.exe"
-            EndIf
-
-            javaProgram = RunProgram(ReplaceString(javaBinaryPath, "javaw", "java"), "-d64 -version", workingDirectory, #PB_Program_Open | #PB_Program_Wait | #PB_Program_Hide)
-
-            If javaProgram
-              If ProgramExitCode(javaProgram) And Val(ramAmount) > 1300
-                ramAmount = "1300"
-
-                MessageRequester("Warning", "You're using 32-bit Java and allocating more than 1300 MB of memory (RAM)!" + #CRLF$ + #CRLF$ + "Allocated memory set to 1300 MB to prevent crashes." + #CRLF$ + #CRLF$ + "Use 64-bit Java if you want to allocate more memory.")
-              EndIf
             EndIf
 
             If Val(ramAmount) < 350
@@ -247,6 +246,7 @@ If OpenWindow(0, #PB_Ignore, #PB_Ignore, windowWidth, windowHeight, "Vortex Mine
                   clientArguments = ReplaceString(clientArguments, "${game_assets}", "resources")
 
                   If assetsIndex = "pre-1.6" Or assetsIndex = "legacy"
+                    DeleteDirectory("resources", "", #PB_FileSystem_Recursive)
                     assetsToResources(assetsIndex)
                   EndIf
 
@@ -254,16 +254,15 @@ If OpenWindow(0, #PB_Ignore, #PB_Ignore, windowWidth, windowHeight, "Vortex Mine
                     downloadFiles(0)
                   EndIf
 
-                  saveLaunchString = ReadPreferenceInteger("SaveLaunchString", saveLaunchStringDefault)
-
-                  fullLaunchString = "-Xmx" + ramAmount + "M " + customLaunchArguments + " -Djava.library.path=" + nativesPath + " -cp " + librariesString + clientJarFile + " " + clientMainClass + " " + clientArguments
+                  fullLaunchString = "-Xmx" + ramAmount + "M " + customLaunchArguments + " " + Chr(34) + "-Djava.library.path=" + nativesPath + Chr(34) + " -cp " + Chr(34) + librariesString + clientJarFile + Chr(34) + " " + clientMainClass + " " + clientArguments
                   RunProgram(javaBinaryPath, fullLaunchString, workingDirectory)
 
+                  saveLaunchString = ReadPreferenceInteger("SaveLaunchString", saveLaunchStringDefault)
                   If saveLaunchString
+                    DeleteFile("launch_string.txt")
+
                     launchStringFile = OpenFile(#PB_Any, "launch_string.txt")
-
                     WriteString(launchStringFile, Chr(34) + javaBinaryPath + Chr(34) + " " + fullLaunchString)
-
                     CloseFile(launchStringFile)
                   EndIf
 
@@ -292,7 +291,8 @@ If OpenWindow(0, #PB_Ignore, #PB_Ignore, windowWidth, windowHeight, "Vortex Mine
         Case downloadButton
           InitNetwork()
 
-          If ReceiveHTTPFile("https://launchermeta.mojang.com/mc/game/version_manifest.json", "version_manifest.json")
+          *FileBuffer = ReceiveHTTPMemory("https://launchermeta.mojang.com/mc/game/version_manifest.json")
+          If *FileBuffer
             If OpenWindow(1, #PB_Ignore, #PB_Ignore, 200, 120, "Client Downloader")
               DisableGadget(downloadButton, 1)
 
@@ -306,6 +306,9 @@ If OpenWindow(0, #PB_Ignore, #PB_Ignore, windowWidth, windowHeight, "Vortex Mine
               downloadVersionButton = ButtonGadget(#PB_Any, 5, 85, 190, 30, "Download")
 
               If IsThread(downloadThread) : DisableGadget(downloadVersionButton, 1) : EndIf
+
+              versionsManifestString = PeekS(*FileBuffer, MemorySize(*FileBuffer), #PB_UTF8)
+              FreeMemory(*FileBuffer)
 
               parseVersionsManifest(GetGadgetState(versionsTypeGadget))
             EndIf
@@ -321,8 +324,8 @@ If OpenWindow(0, #PB_Ignore, #PB_Ignore, windowWidth, windowHeight, "Vortex Mine
           CreateDirectoryRecursive("versions\" + versionToDownload)
 
           If ReceiveHTTPFile(parseVersionsManifest(GetGadgetState(versionsDownloadGadget), 1, versionToDownload), "versions\" + versionToDownload + "\" + versionToDownload + ".json")
-            DeleteFile("download_list.txt")
-            listOfFiles = OpenFile(#PB_Any, "download_list.txt")
+            DeleteFile(tempDirectory + "vlauncher_download_list.txt")
+            listOfFiles = OpenFile(#PB_Any, tempDirectory + "vlauncher_download_list.txt")
 
             jsonFile = ParseJSON(#PB_Any, fileRead("versions\" + versionToDownload + "\" + versionToDownload + ".json"))
 
@@ -483,7 +486,7 @@ If OpenWindow(0, #PB_Ignore, #PB_Ignore, windowWidth, windowHeight, "Vortex Mine
 
   Until Event = #PB_Event_CloseWindow And EventWindow() = 0
 
-  DeleteFile("version_manifest.json") : DeleteFile("download_list.txt")
+  DeleteFile(tempDirectory + "vlauncher_download_list.txt")
 EndIf
 
 Procedure findInstalledVersions()
@@ -533,7 +536,7 @@ Procedure.s parseVersionsManifest(versionType.i = 0, getClientJarUrl.i = 0, clie
   Protected.i jsonFile, jsonObject, jsonVersionsArray, jsonArrayElement, i
   Protected.s url
 
-  jsonFile = ParseJSON(#PB_Any, fileRead("version_manifest.json"))
+  jsonFile = ParseJSON(#PB_Any, versionsManifestString)
 
   If jsonFile
     jsonObject = JSONValue(jsonFile)
@@ -577,7 +580,7 @@ Procedure.s parseLibraries(clientVersion.s, prepareForDownload.i = 0)
   Protected Dim libSplit.s(3)
 
   If prepareForDownload = 1
-    downloadListFile = OpenFile(#PB_Any, "download_list.txt")
+    downloadListFile = OpenFile(#PB_Any, tempDirectory + "vlauncher_download_list.txt")
     FileSeek(downloadListFile, Lof(downloadListFile), #PB_Relative)
   EndIf
 
@@ -679,7 +682,7 @@ Procedure downloadFiles(downloadAllFiles.i)
   Protected.i currentDownloads
   Protected.i retries
 
-  file = ReadFile(#PB_Any, "download_list.txt")
+  file = ReadFile(#PB_Any, tempDirectory + "vlauncher_download_list.txt")
 
   If file
     While Eof(file) = 0
@@ -796,7 +799,7 @@ Procedure downloadFiles(downloadAllFiles.i)
 
   FreeArray(httpArray())
   FreeArray(strings())
-  DeleteFile("download_list.txt")
+  DeleteFile(tempDirectory + "vlauncher_download_list.txt")
 EndProcedure
 
 Procedure progressWindow(clientVersion.s)
