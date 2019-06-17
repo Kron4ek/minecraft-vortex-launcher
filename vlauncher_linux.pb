@@ -785,7 +785,7 @@ Procedure downloadFiles(downloadAllFiles.i)
 
   FreeArray(httpArray())
   FreeArray(strings())
-  DeleteFile("vlauncher_download_list.txt")
+  DeleteFile(tempDirectory + "vlauncher_download_list.txt")
 EndProcedure
 
 Procedure progressWindow(clientVersion.s)
