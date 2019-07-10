@@ -39,7 +39,7 @@ Define.i saveLaunchStringDefault = 0
 Define.i useCustomJavaDefault = 0
 Define.i useCustomParamsDefault = 0
 
-Define.s launcherVersion = "1.1.4"
+Define.s launcherVersion = "1.1.5"
 Define.s launcherDeveloper = "Kron(4ek)"
 
 Declare assetsToResources(assetsIndex.s)
@@ -187,7 +187,7 @@ If OpenWindow(0, #PB_Ignore, #PB_Ignore, windowWidth, windowHeight, "Vortex Mine
                 EndIf
 
                 If FileSize(clientJarFile) > 0
-                  librariesString + parseLibraries(clientVersion, downloadMissingLibraries)
+                  librariesString = parseLibraries(clientVersion, downloadMissingLibraries) + librariesString
                   clientMainClass = GetJSONString(GetJSONMember(jsonObject, "mainClass"))
 
                   jsonArgumentsMember = GetJSONMember(jsonObject, "minecraftArguments")
@@ -219,11 +219,13 @@ If OpenWindow(0, #PB_Ignore, #PB_Ignore, windowWidth, windowHeight, "Vortex Mine
                     Next
                   EndIf
 
+                  UseMD5Fingerprint()
+
                   clientArguments = ReplaceString(clientArguments, "${auth_player_name}", playerName)
                   clientArguments = ReplaceString(clientArguments, "${version_name}", clientVersion)
                   clientArguments = ReplaceString(clientArguments, "${game_directory}", workingDirectory)
                   clientArguments = ReplaceString(clientArguments, "${assets_root}", "assets")
-                  clientArguments = ReplaceString(clientArguments, "${auth_uuid}", "00000000-0000-0000-0000-000000000000")
+                  clientArguments = ReplaceString(clientArguments, "${auth_uuid}", StringFingerprint("OfflinePlayer:" + playerName, #PB_Cipher_MD5))
                   clientArguments = ReplaceString(clientArguments, "${auth_access_token}", "00000000-0000-0000-0000-000000000000")
                   clientArguments = ReplaceString(clientArguments, "${user_properties}", "{}")
                   clientArguments = ReplaceString(clientArguments, "${user_type}", "mojang")
