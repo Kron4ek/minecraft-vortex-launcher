@@ -24,6 +24,7 @@ Define.i listOfFiles, jsonFile, jsonObject, jsonObjectObjects, fileSize, jsonJar
 
 Define.s playerName, ramAmount, clientVersion, javaBinaryPath, fullLaunchString, assetsIndex, clientUrl, fileHash, versionToDownload
 Define.s assetsIndex, clientMainClass, clientArguments, inheritsClientJar, customLaunchArguments, clientJarFile, nativesPath, librariesString
+Define.s uuid
 
 Define.i downloadMissingLibraries, jsonArgumentsMember, jsonArgumentsModernMember, jsonInheritsFromMember
 Define.i downloadMissingLibrariesGadget, downloadThreadsGadget, asyncDownloadGadget, saveSettingsButton, useCustomJavaGadget, useCustomParamsGadget
@@ -42,7 +43,7 @@ Define.i useCustomParamsDefault = 0
 Global.i useCustomJavaDefault = 0
 Global.s javaBinaryPathDefault = "C:\jre8\bin\javaw.exe"
 
-Define.s launcherVersion = "1.1.5"
+Define.s launcherVersion = "1.1.6"
 Define.s launcherDeveloper = "Kron(4ek)"
 
 Declare assetsToResources(assetsIndex.s)
@@ -234,11 +235,14 @@ If OpenWindow(0, #PB_Ignore, #PB_Ignore, windowWidth, windowHeight, "Vortex Mine
 
                   UseMD5Fingerprint()
 
+                  uuid = StringFingerprint("OfflinePlayer:" + playerName, #PB_Cipher_MD5)
+                  uuid = Left(uuid, 12) + LCase(Hex(Val("$" + Mid(uuid, 13, 2)) & $0f | $30)) + Mid(uuid, 15, 2) + LCase(Hex(Val("$" + Mid(uuid, 17, 2)) & $3f | $80)) + Right(uuid, 14)
+
                   clientArguments = ReplaceString(clientArguments, "${auth_player_name}", playerName)
                   clientArguments = ReplaceString(clientArguments, "${version_name}", clientVersion)
                   clientArguments = ReplaceString(clientArguments, "${game_directory}", workingDirectory)
                   clientArguments = ReplaceString(clientArguments, "${assets_root}", "assets")
-                  clientArguments = ReplaceString(clientArguments, "${auth_uuid}", StringFingerprint("OfflinePlayer:" + playerName, #PB_Cipher_MD5))
+                  clientArguments = ReplaceString(clientArguments, "${auth_uuid}", uuid)
                   clientArguments = ReplaceString(clientArguments, "${auth_access_token}", "00000000-0000-0000-0000-000000000000")
                   clientArguments = ReplaceString(clientArguments, "${user_properties}", "{}")
                   clientArguments = ReplaceString(clientArguments, "${user_type}", "mojang")
