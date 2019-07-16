@@ -1,8 +1,13 @@
+v1.1.7
+	* Fixed launching Forge with old clients (1.6.4 and older)
+	* Fixed download progress counting when multi-thread download is enabled
+	* Fixed rare crash when selecting "Redownload existing files" checkbox
+---------------------------------------------------------------------
 v1.1.6
 	* Fixed UUID generation
 ---------------------------------------------------------------------
 v1.1.5
-	* Fixed launching Forge with older clients (1.7.10 and older)
+	* Fixed launching Forge with 1.7.10 client
 	* Implemented proper UUID generator
 ---------------------------------------------------------------------
 v1.1.4

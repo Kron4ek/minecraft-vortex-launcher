@@ -21,6 +21,7 @@ Define.i saveLaunchString, versionsTypeGadget, saveLaunchStringGadget, launchStr
 Define.i argsTextGadget, javaBinaryPathTextGadget, downloadThreadsTextGadget, downloadAllFilesGadget, javaPathGadget
 Define.i gadgetsWidth, gadgetsHeight, gadgetsIndent, windowWidth, windowHeight
 Define.i listOfFiles, jsonFile, jsonObject, jsonObjectObjects, fileSize, jsonJarMember, jsonArgumentsArray, jsonArrayElement, inheritsJson, clientSize
+Define.i versionSecondDigit
 
 Define.s playerName, ramAmount, clientVersion, javaBinaryPath, fullLaunchString, assetsIndex, clientUrl, fileHash, versionToDownload
 Define.s assetsIndex, clientMainClass, clientArguments, inheritsClientJar, customLaunchArguments, clientJarFile, nativesPath, librariesString
@@ -43,7 +44,7 @@ Define.i useCustomParamsDefault = 0
 Global.i useCustomJavaDefault = 0
 Global.s javaBinaryPathDefault = "C:\jre8\bin\javaw.exe"
 
-Define.s launcherVersion = "1.1.6"
+Define.s launcherVersion = "1.1.7"
 Define.s launcherDeveloper = "Kron(4ek)"
 
 Declare assetsToResources(assetsIndex.s)
@@ -118,8 +119,9 @@ If OpenWindow(0, #PB_Ignore, #PB_Ignore, windowWidth, windowHeight, "Vortex Mine
           playerName = GetGadgetText(nameGadget)
           javaBinaryPath = GetGadgetText(javaListGadget)
           downloadMissingLibraries = ReadPreferenceInteger("DownloadMissingLibs", downloadMissingLibrariesDefault)
+          versionSecondDigit = Val(StringField(clientVersion, 2, "."))
 
-          If Val(StringField(clientVersion, 2, ".")) < 13
+          If versionSecondDigit < 13
             customLaunchArguments = customOldLaunchArgumentsDefault
           Else
             customLaunchArguments = customLaunchArgumentsDefault
@@ -197,7 +199,13 @@ If OpenWindow(0, #PB_Ignore, #PB_Ignore, windowWidth, windowHeight, "Vortex Mine
                     MessageRequester("Error", inheritsClientJar + ".json file is missing!") : Break
                   EndIf
                 Else
-                  assetsIndex = GetJSONString(GetJSONMember(jsonObject, "assets"))
+                  If GetJSONMember(jsonObject, "assets")
+                    assetsIndex = GetJSONString(GetJSONMember(jsonObject, "assets"))
+                  ElseIf versionSecondDigit < 6
+                    assetsIndex = "pre-1.6"
+                  Else
+                    assetsIndex = "legacy"
+                  EndIf
                 EndIf
 
                 If FileSize(clientJarFile) > 0
@@ -243,13 +251,14 @@ If OpenWindow(0, #PB_Ignore, #PB_Ignore, windowWidth, windowHeight, "Vortex Mine
                   clientArguments = ReplaceString(clientArguments, "${game_directory}", workingDirectory)
                   clientArguments = ReplaceString(clientArguments, "${assets_root}", "assets")
                   clientArguments = ReplaceString(clientArguments, "${auth_uuid}", uuid)
-                  clientArguments = ReplaceString(clientArguments, "${auth_access_token}", "00000000-0000-0000-0000-000000000000")
+                  clientArguments = ReplaceString(clientArguments, "${auth_access_token}", "00000000000000000000000000000000")
                   clientArguments = ReplaceString(clientArguments, "${user_properties}", "{}")
                   clientArguments = ReplaceString(clientArguments, "${user_type}", "mojang")
                   clientArguments = ReplaceString(clientArguments, "${version_type}", "client")
                   clientArguments = ReplaceString(clientArguments, "${assets_index_name}", assetsIndex)
-                  clientArguments = ReplaceString(clientArguments, "${auth_session}", "00000000-0000-0000-0000-000000000000")
+                  clientArguments = ReplaceString(clientArguments, "${auth_session}", "00000000000000000000000000000000")
                   clientArguments = ReplaceString(clientArguments, "${game_assets}", "resources")
+                  clientArguments = ReplaceString(clientArguments, "  ", " ")
 
                   If assetsIndex = "pre-1.6" Or assetsIndex = "legacy"
                     DeleteDirectory("resources", "", #PB_FileSystem_Recursive)
@@ -307,7 +316,8 @@ If OpenWindow(0, #PB_Ignore, #PB_Ignore, windowWidth, windowHeight, "Vortex Mine
               CheckBoxGadget(110, 5, 40, 130, 20, "Show all versions")
               versionsTypeGadget = 110
               SetGadgetState(versionsTypeGadget, ReadPreferenceInteger("ShowAllVersions", versionsTypeDefault))
-              downloadAllFilesGadget = CheckBoxGadget(#PB_Any, 5, 60, 130, 20, "Redownload existing files")
+              CheckBoxGadget(817, 5, 60, 130, 20, "Redownload all files")
+              downloadAllFilesGadget = 817
               SetGadgetState(downloadAllFilesGadget, ReadPreferenceInteger("RedownloadFiles", downloadAllFilesDefault))
               downloadVersionButton = ButtonGadget(#PB_Any, 5, 85, 190, 30, "Download")
 
@@ -712,8 +722,6 @@ Procedure downloadFiles(downloadAllFiles.i)
             string = ReadString(file)
 
             If string
-              lines - 1
-
               fileSize = FileSize(StringField(string, 2, "::"))
               requiredSize = Val(StringField(string, 3, "::"))
 
@@ -725,10 +733,13 @@ Procedure downloadFiles(downloadAllFiles.i)
                 retries(i) = 0
 
                 currentDownloads + 1
+              Else
+                lines - 1
               EndIf
             EndIf
           ElseIf HTTPProgress(httpArray(i)) = #PB_Http_Success
             currentDownloads - 1
+            lines - 1
 
             FinishHTTP(httpArray(i))
             httpArray(i) = 0
