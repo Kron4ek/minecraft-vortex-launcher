@@ -1,3 +1,6 @@
+v1.1.8
+	* More proper libraries parsing (fixes problems with natives versions mismatch)
+---------------------------------------------------------------------
 v1.1.7
 	* Fixed launching Forge with old clients (1.6.4 and older)
 	* Fixed download progress counting when multi-thread download is enabled

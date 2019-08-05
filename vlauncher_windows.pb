@@ -44,7 +44,7 @@ Define.i useCustomParamsDefault = 0
 Global.i useCustomJavaDefault = 0
 Global.s javaBinaryPathDefault = "C:\jre8\bin\javaw.exe"
 
-Define.s launcherVersion = "1.1.7"
+Define.s launcherVersion = "1.1.8"
 Define.s launcherDeveloper = "Kron(4ek)"
 
 Declare assetsToResources(assetsIndex.s)
@@ -590,9 +590,12 @@ EndProcedure
 Procedure.s parseLibraries(clientVersion.s, prepareForDownload.i = 0)
   Protected.i jsonLibrariesArray, jsonArrayElement, jsonFile, fileSize, downloadListFile, zipFile
   Protected.i jsonArtifactsMember, jsonDownloadsMember, jsonUrlMember, jsonClassifiersMember, jsonNativesLinuxMember
+  Protected.i jsonRulesMember, jsonRulesOsMember
   Protected.i i, k
+  Protected.i allowLib
 
   Protected.s libName, libsString, packFileName, url
+  Protected.s jsonRulesOsName
   Protected Dim libSplit.s(3)
 
   If prepareForDownload = 1
@@ -609,71 +612,99 @@ Procedure.s parseLibraries(clientVersion.s, prepareForDownload.i = 0)
 
     For i = 0 To JSONArraySize(jsonLibrariesArray) - 1
       jsonArrayElement = GetJSONElement(jsonLibrariesArray, i)
-      libName = GetJSONString(GetJSONMember(jsonArrayElement, "name"))
+      allowLib = 1
+      jsonRulesOsName = "empty"
 
-      For k = 1 To 3
-        libSplit(k) = StringField(libName, k, ":")
-      Next
+      jsonRulesMember = GetJSONMember(jsonArrayElement, "rules")
 
-      libName = ReplaceString(libSplit(1), ".", "\") + "\" + libSplit(2) + "\" + libSplit(3) + "\" + libSplit(2) + "-" + libSplit(3)
+      If jsonRulesMember
+        For k = 0 To JSONArraySize(jsonRulesMember) - 1
+          jsonRulesOsMember = GetJSONMember(GetJSONElement(jsonRulesMember, k), "os")
 
-      If prepareForDownload = 1
-        jsonDownloadsMember = GetJSONMember(jsonArrayElement, "downloads")
+          If jsonRulesOsMember
+            jsonRulesOsName = GetJSONString(GetJSONMember(jsonRulesOsMember, "name"))
+          EndIf
 
-        If jsonDownloadsMember
-          jsonArtifactsMember = GetJSONMember(jsonDownloadsMember, "artifact")
-          jsonClassifiersMember = GetJSONMember(jsonDownloadsMember, "classifiers")
-
-          If jsonClassifiersMember
-            jsonNativesLinuxMember = GetJSONMember(jsonClassifiersMember, "natives-windows")
-
-            If jsonNativesLinuxMember
-              url = GetJSONString(GetJSONMember(jsonNativesLinuxMember, "url"))
-              fileSize = GetJSONInteger(GetJSONMember(jsonNativesLinuxMember, "size"))
-
-              libName + "-natives-windows"
+          If GetJSONString(GetJSONMember(GetJSONElement(jsonRulesMember, k), "action")) = "allow"
+            If jsonRulesOsName <> "empty" And jsonRulesOsName <> "windows"
+              allowLib = 0
             EndIf
-          ElseIf jsonArtifactsMember
-            url = GetJSONString(GetJSONMember(jsonArtifactsMember, "url"))
-            fileSize = GetJSONInteger(GetJSONMember(jsonArtifactsMember, "size"))
-          EndIf
-        Else
-          jsonUrlMember = GetJSONMember(jsonArrayElement, "url")
-
-          If jsonUrlMember
-            url = GetJSONString(jsonUrlMember) + ReplaceString(libName, "\", "/") + ".jar"
           Else
-            url = "https://libraries.minecraft.net/" + ReplaceString(libName, "\", "/") + ".jar"
+            If jsonRulesOsName = "windows"
+              allowLib = 0
+            EndIf
           EndIf
-        EndIf
-
-        WriteStringN(downloadListFile, url + "::" + "libraries\" + libName + ".jar" + "::" + fileSize)
+        Next
       EndIf
 
-      If Not GetJSONMember(jsonArrayElement, "natives")
-        libsString + "libraries\" + libName + ".jar;"
-      Else
-        If Not Right(libName, 15) = "natives-windows"
-          zipFile = OpenPack(#PB_Any, "libraries\" + libName + "-natives-windows.jar")
-        Else
-          zipFile = OpenPack(#PB_Any, "libraries\" + libName + ".jar")
-        EndIf
+      If allowLib
+        libName = GetJSONString(GetJSONMember(jsonArrayElement, "name"))
 
-        If zipFile
-          CreateDirectoryRecursive("versions\" + clientVersion + "\natives")
-          If ExaminePack(zipFile)
-            While NextPackEntry(zipFile)
-              If PackEntryType(zipFile) = #PB_Packer_File
-                packFileName = PackEntryName(zipFile)
+        For k = 1 To 3
+          libSplit(k) = StringField(libName, k, ":")
+        Next
 
-                If packFileName <> "MANIFEST.MF" And FileSize("versions\" + clientVersion + "\natives\" + packFileName) <= 0
-                UncompressPackFile(zipFile, "versions\" + clientVersion + "\natives\" + packFileName)
-                EndIf
+        libName = ReplaceString(libSplit(1), ".", "\") + "\" + libSplit(2) + "\" + libSplit(3) + "\" + libSplit(2) + "-" + libSplit(3)
+
+        If prepareForDownload = 1
+          jsonDownloadsMember = GetJSONMember(jsonArrayElement, "downloads")
+
+          If jsonDownloadsMember
+            jsonArtifactsMember = GetJSONMember(jsonDownloadsMember, "artifact")
+            jsonClassifiersMember = GetJSONMember(jsonDownloadsMember, "classifiers")
+
+            If jsonClassifiersMember
+              jsonNativesLinuxMember = GetJSONMember(jsonClassifiersMember, "natives-windows")
+
+              If jsonNativesLinuxMember
+                url = GetJSONString(GetJSONMember(jsonNativesLinuxMember, "url"))
+                fileSize = GetJSONInteger(GetJSONMember(jsonNativesLinuxMember, "size"))
+
+                libName + "-natives-windows"
               EndIf
-            Wend
+            ElseIf jsonArtifactsMember
+              url = GetJSONString(GetJSONMember(jsonArtifactsMember, "url"))
+              fileSize = GetJSONInteger(GetJSONMember(jsonArtifactsMember, "size"))
+            EndIf
+          Else
+            jsonUrlMember = GetJSONMember(jsonArrayElement, "url")
+
+            If jsonUrlMember
+              url = GetJSONString(jsonUrlMember) + ReplaceString(libName, "\", "/") + ".jar"
+            Else
+              url = "https://libraries.minecraft.net/" + ReplaceString(libName, "\", "/") + ".jar"
+            EndIf
           EndIf
 
-          ClosePack(zipFile)
+          WriteStringN(downloadListFile, url + "::" + "libraries\" + libName + ".jar" + "::" + fileSize)
+        EndIf
+
+        If Not GetJSONMember(jsonArrayElement, "natives")
+          libsString + "libraries\" + libName + ".jar;"
+        Else
+          If Not Right(libName, 15) = "natives-windows"
+            zipFile = OpenPack(#PB_Any, "libraries\" + libName + "-natives-windows.jar")
+          Else
+            zipFile = OpenPack(#PB_Any, "libraries\" + libName + ".jar")
+          EndIf
+
+          If zipFile
+            CreateDirectoryRecursive("versions\" + clientVersion + "\natives")
+
+            If ExaminePack(zipFile)
+              While NextPackEntry(zipFile)
+                If PackEntryType(zipFile) = #PB_Packer_File
+                  packFileName = PackEntryName(zipFile)
+
+                  If FileSize("versions\" + clientVersion + "\natives\" + packFileName) < 1
+                    UncompressPackFile(zipFile, "versions\" + clientVersion + "\natives\" + packFileName)
+                  EndIf
+                EndIf
+              Wend
+            EndIf
+
+            ClosePack(zipFile)
+          EndIf
         EndIf
       EndIf
     Next
