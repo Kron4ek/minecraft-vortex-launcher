@@ -1,3 +1,9 @@
+v1.1.9
+	* Fixed download progress bar
+	* Some default settings changed to more sane values
+	* Added setting to keep the launcher open after launching the game
+	* Slightly improved startup time for older game versions (1.6 and older)
+---------------------------------------------------------------------
 v1.1.8
 	* More proper libraries parsing (fixes problems with natives versions mismatch)
 ---------------------------------------------------------------------
