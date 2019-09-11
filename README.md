@@ -1,6 +1,6 @@
 ## Vortex Minecraft Launcher
 
-Fast, lightweight and easy to use Minecraft launcher. Natively available for Linux and Windows.
+Fast, lightweight and easy to use Minecraft launcher. Natively available for Windows, Linux and macOS.
 
 ---
 
@@ -8,7 +8,7 @@ Fast, lightweight and easy to use Minecraft launcher. Natively available for Lin
 
 * Lightweight and fast
 * Open-Source
-* Cross-Platform (currently available for Windows and Linux)
+* Cross-Platform (available for Windows, Linux and macOS)
 * Supports all Minecraft versions
 * Supports Forge and other APIs
 * Downloads all Minecraft versions
