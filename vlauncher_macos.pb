@@ -1,6 +1,6 @@
 EnableExplicit
 
-Define.s workingDirectory = GetPathPart(ProgramFilename())
+Define.s workingDirectory = GetHomeDirectory() + "Library/Application Support/minecraft_vlauncher"
 Global.s tempDirectory = GetTemporaryDirectory()
 
 Global.i downloadOkButton
@@ -55,6 +55,10 @@ Declare.s parseVersionsManifest(versionType.i = 0, getClientJarUrl.i = 0, client
 Declare.s parseLibraries(clientVersion.s, prepareForDownload.i = 0)
 Declare.s fileRead(pathToFile.s)
 Declare.s removeSpacesFromVersionName(clientVersion.s)
+
+If Not FileSize(workingDirectory) = -2
+  CreateDirectory(workingDirectory)
+EndIf
 
 SetCurrentDirectory(workingDirectory)
 OpenPreferences("vortex_launcher.conf")
