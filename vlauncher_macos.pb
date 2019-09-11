@@ -1,7 +1,8 @@
 EnableExplicit
 
-Define.s workingDirectory = GetHomeDirectory() + "Library/Application Support/minecraft_vlauncher"
+Define.s pathToProgram = GetPathPart(ProgramFilename())
 Global.s tempDirectory = GetTemporaryDirectory()
+Define.s workingDirectory
 
 Global.i downloadOkButton
 Global.i downloadThreadsAmount
@@ -27,7 +28,7 @@ Define.s uuid
 
 Define.i downloadThread, downloadMissingLibraries, jsonArgumentsMember, jsonArgumentsModernMember, jsonInheritsFromMember
 Define.i downloadMissingLibrariesGadget, downloadThreadsGadget, asyncDownloadGadget, saveSettingsButton, useCustomJavaGadget, useCustomParamsGadget
-Define.i i
+Define.i i, n
 
 Define.s playerNameDefault = "Name", ramAmountDefault = "1024", javaBinaryPathDefault = "/usr/bin/java"
 Define.s customLaunchArgumentsDefault = "-XstartOnFirstThread -Xss1M -XX:+UnlockExperimentalVMOptions -XX:+UseG1GC -XX:G1NewSizePercent=20 -XX:G1ReservePercent=20 -XX:MaxGCPauseMillis=50 -XX:G1HeapRegionSize=16M"
@@ -56,9 +57,9 @@ Declare.s parseLibraries(clientVersion.s, prepareForDownload.i = 0)
 Declare.s fileRead(pathToFile.s)
 Declare.s removeSpacesFromVersionName(clientVersion.s)
 
-If Not FileSize(workingDirectory) = -2
-  CreateDirectory(workingDirectory)
-EndIf
+For n = 1 To CountString(pathToProgram, "/") - 3
+  workingDirectory + StringField(pathToProgram, n, "/") + "/"
+Next
 
 SetCurrentDirectory(workingDirectory)
 OpenPreferences("vortex_launcher.conf")
@@ -114,7 +115,7 @@ If OpenWindow(0, #PB_Ignore, #PB_Ignore, windowWidth, windowHeight, "Vortex Mine
           playerName = GetGadgetText(nameGadget)
           downloadMissingLibraries = ReadPreferenceInteger("DownloadMissingLibs", downloadMissingLibrariesDefault)
           versionSecondDigit = Val(StringField(clientVersion, 2, "."))
-          
+
           If FileSize("/Library/Internet Plug-ins/JavaAppletPlugin.plugin/Contents/Home/bin/java") > 0
             javaBinaryPath = "/Library/Internet Plug-ins/JavaAppletPlugin.plugin/Contents/Home/bin/java"
           Else
@@ -685,7 +686,7 @@ Procedure.s parseLibraries(clientVersion.s, prepareForDownload.i = 0)
         Else
           If Not Right(libName, 13) = "natives-macos" And Not Right(libName, 11) = "natives-osx"
             zipFile = OpenPack(#PB_Any, "libraries/" + libName + "-natives-macos.jar")
-            
+
             If Not zipFile
               zipFile = OpenPack(#PB_Any, "libraries/" + libName + "-natives-osx.jar")
             EndIf
