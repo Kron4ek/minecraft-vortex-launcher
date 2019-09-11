@@ -96,8 +96,8 @@ If OpenWindow(0, #PB_Ignore, #PB_Ignore, windowWidth, windowHeight, "Vortex Mine
   EndIf
 
   launcherAuthorGadget = TextGadget(#PB_Any, 2, windowHeight - 10, 70, 20, "by " + launcherDeveloper)
-  launcherVersionGadget = TextGadget(#PB_Any, windowWidth - 35, windowHeight - 10, 50, 20, "v" + launcherVersion)
-  If LoadFont(1, "Ariral", 7)
+  launcherVersionGadget = TextGadget(#PB_Any, windowWidth - 30, windowHeight - 10, 50, 20, "v" + launcherVersion)
+  If LoadFont(1, "Ariral", 8)
     font = FontID(1) : SetGadgetFont(launcherAuthorGadget, font) : SetGadgetFont(launcherVersionGadget, font)
   EndIf
 
@@ -390,15 +390,15 @@ If OpenWindow(0, #PB_Ignore, #PB_Ignore, windowWidth, windowHeight, "Vortex Mine
           DisableGadget(settingsButton, 1)
 
           If OpenWindow(3, #PB_Ignore, #PB_Ignore, 350, 290, "Vortex Launcher Settings")
-              argsTextGadget = TextGadget(#PB_Any, 5, 5, 80, 30, "Launch parameters:")
+              argsTextGadget = TextGadget(#PB_Any, 5, 5, 80, 40, "Launch parameters:")
               argsGadget = StringGadget(#PB_Any, 85, 5, 260, 30, ReadPreferenceString("LaunchArguments", customLaunchArgumentsDefault))
               GadgetToolTip(argsGadget, "These parameters will be used to launch Minecraft")
 
-              javaBinaryPathTextGadget = TextGadget(#PB_Any, 5, 45, 80, 30, "Path to Java:")
+              javaBinaryPathTextGadget = TextGadget(#PB_Any, 5, 45, 70, 40, "Path to Java:")
               javaPathGadget = StringGadget(#PB_Any, 85, 45, 260, 30, ReadPreferenceString("JavaPath", javaBinaryPathDefault))
               GadgetToolTip(javaPathGadget, "Absolute path to Java binary")
 
-              downloadThreadsTextGadget = TextGadget(#PB_Any, 5, 85, 80, 30, "Download threads:")
+              downloadThreadsTextGadget = TextGadget(#PB_Any, 5, 85, 80, 40, "Download threads:")
               downloadThreadsGadget = StringGadget(#PB_Any, 85, 85, 260, 30, ReadPreferenceString("DownloadThreads", Str(downloadThreadsAmountDefault)), #PB_String_Numeric)
               GadgetToolTip(downloadThreadsGadget, "Higher numbers may speedup downloads (works only with multi-threads downloads)")
               SetGadgetAttribute(downloadThreadsGadget, #PB_String_MaximumLength, 3)
