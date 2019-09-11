@@ -26,13 +26,13 @@ Define.s assetsIndex, clientMainClass, clientArguments, inheritsClientJar, custo
 Define.s uuid
 
 Define.i downloadThread, downloadMissingLibraries, jsonArgumentsMember, jsonArgumentsModernMember, jsonInheritsFromMember
-Define.i downloadMissingLibrariesGadget, downloadThreadsGadget, asyncDownloadGadget, saveSettingsButton, useCustomJavaGadget, useCustomParamsGadget
+Define.i downloadMissingLibrariesGadget, downloadThreadsGadget, asyncDownloadGadget, saveSettingsButton, useCustomJavaGadget, useCustomParamsGadget, keepLauncherOpenGadget
 Define.i i
 
-Define.s playerNameDefault = "Name", ramAmountDefault = "1024", javaBinaryPathDefault = "/usr/bin/java"
+Define.s playerNameDefault = "Name", ramAmountDefault = "700", javaBinaryPathDefault = "/usr/bin/java"
 Define.s customLaunchArgumentsDefault = "-Xss1M -XX:+UnlockExperimentalVMOptions -XX:+UseG1GC -XX:G1NewSizePercent=20 -XX:G1ReservePercent=20 -XX:MaxGCPauseMillis=50 -XX:G1HeapRegionSize=16M"
 Define.s customOldLaunchArgumentsDefault = "-XX:+UseConcMarkSweepGC -XX:+CMSIncrementalMode -XX:-UseAdaptiveSizePolicy -Xmn128M"
-Define.i downloadThreadsAmountDefault = 50
+Define.i downloadThreadsAmountDefault = 10
 Define.i asyncDownloadDefault = 0
 Define.i downloadMissingLibrariesDefault = 0
 Define.i downloadAllFilesDefault = 0
@@ -40,8 +40,9 @@ Define.i versionsTypeDefault = 0
 Define.i saveLaunchStringDefault = 0
 Define.i useCustomJavaDefault = 0
 Define.i useCustomParamsDefault = 0
+Define.i keepLauncherOpenDefault = 0
 
-Define.s launcherVersion = "1.1.8"
+Define.s launcherVersion = "1.1.9"
 Define.s launcherDeveloper = "Kron(4ek)"
 
 Declare assetsToResources(assetsIndex.s)
@@ -100,7 +101,7 @@ If OpenWindow(0, #PB_Ignore, #PB_Ignore, windowWidth, windowHeight, "Vortex Mine
   findInstalledVersions()
 
   Repeat
-    Event = WaitWindowEvent(500)
+    Event = WaitWindowEvent()
 
     If Event = #PB_Event_Gadget
       Select EventGadget()
@@ -248,7 +249,6 @@ If OpenWindow(0, #PB_Ignore, #PB_Ignore, windowWidth, windowHeight, "Vortex Mine
                   clientArguments = ReplaceString(clientArguments, "  ", " ")
 
                   If assetsIndex = "pre-1.6" Or assetsIndex = "legacy"
-                    DeleteDirectory("resources", "", #PB_FileSystem_Recursive)
                     assetsToResources(assetsIndex)
                   EndIf
 
@@ -268,7 +268,9 @@ If OpenWindow(0, #PB_Ignore, #PB_Ignore, windowWidth, windowHeight, "Vortex Mine
                     CloseFile(launchStringFile)
                   EndIf
 
-                  Break
+                  If Not ReadPreferenceInteger("KeepLauncherOpen", keepLauncherOpenDefault)
+                    Break
+                  EndIf
                 Else
                   MessageRequester("Error", "Client jar file is missing!")
                 EndIf
@@ -380,7 +382,7 @@ If OpenWindow(0, #PB_Ignore, #PB_Ignore, windowWidth, windowHeight, "Vortex Mine
         Case settingsButton
           DisableGadget(settingsButton, 1)
 
-          If OpenWindow(3, #PB_Ignore, #PB_Ignore, 350, 290, "Vortex Launcher Settings")
+          If OpenWindow(3, #PB_Ignore, #PB_Ignore, 350, 315, "Vortex Launcher Settings")
               argsTextGadget = TextGadget(#PB_Any, 5, 5, 80, 30, "Launch parameters:")
               argsGadget = StringGadget(#PB_Any, 85, 5, 260, 30, ReadPreferenceString("LaunchArguments", customLaunchArgumentsDefault))
               GadgetToolTip(argsGadget, "These parameters will be used to launch Minecraft")
@@ -415,7 +417,12 @@ If OpenWindow(0, #PB_Ignore, #PB_Ignore, windowWidth, windowHeight, "Vortex Mine
               GadgetToolTip(useCustomParamsGadget, "Use custom parameters to launch Minecraft")
               SetGadgetState(useCustomParamsGadget, ReadPreferenceInteger("UseCustomParameters", useCustomParamsDefault))
 
-              saveSettingsButton = ButtonGadget(#PB_Any, 5, 250, 340, 20, "Save and apply")
+              CheckBoxGadget(689, 5, 250, 340, 20, "Keep the launcher open")
+              keepLauncherOpenGadget = 689
+              GadgetToolTip(keepLauncherOpenGadget, "Keep the launcher open after launching the game")
+              SetGadgetState(keepLauncherOpenGadget, ReadPreferenceInteger("KeepLauncherOpen", keepLauncherOpenDefault))
+
+              saveSettingsButton = ButtonGadget(#PB_Any, 5, 275, 340, 20, "Save and apply")
 
               DisableGadget(downloadThreadsGadget, Bool(Not GetGadgetState(asyncDownloadGadget)))
               DisableGadget(javaPathGadget, Bool(Not GetGadgetState(useCustomJavaGadget)))
@@ -424,21 +431,22 @@ If OpenWindow(0, #PB_Ignore, #PB_Ignore, windowWidth, windowHeight, "Vortex Mine
         Case useCustomParamsGadget
           DisableGadget(argsGadget, Bool(Not GetGadgetState(useCustomParamsGadget)))
         Case asyncDownloadGadget
-		      If GetGadgetState(asyncDownloadGadget)
-			      MessageRequester("Warning", "This option is experimental and may cause crashes." + #CRLF$ + #CRLF$ + "You have been warned!")
-		      EndIf
+          If GetGadgetState(asyncDownloadGadget)
+            MessageRequester("Warning", "This option is experimental and may cause crashes." + #CRLF$ + #CRLF$ + "You have been warned!")
+          EndIf
 
           DisableGadget(downloadThreadsGadget, Bool(Not GetGadgetState(asyncDownloadGadget)))
         Case useCustomJavaGadget
           DisableGadget(javaPathGadget, Bool(Not GetGadgetState(useCustomJavaGadget)))
         Case saveSettingsButton
-          If GetGadgetText(downloadThreadsGadget) = "0" : SetGadgetText(downloadThreadsGadget, "1") : EndIf
+          If GetGadgetText(downloadThreadsGadget) = "0" : SetGadgetText(downloadThreadsGadget, "5") : EndIf
 
           WritePreferenceInteger("DownloadMissingLibs", GetGadgetState(downloadMissingLibrariesGadget))
           WritePreferenceInteger("AsyncDownload", GetGadgetState(asyncDownloadGadget))
           WritePreferenceInteger("SaveLaunchString", GetGadgetState(saveLaunchStringGadget))
           WritePreferenceInteger("UseCustomJava", GetGadgetState(useCustomJavaGadget))
           WritePreferenceInteger("UseCustomParameters", GetGadgetState(useCustomParamsGadget))
+          WritePreferenceInteger("KeepLauncherOpen", GetGadgetState(keepLauncherOpenGadget))
 
           If GetGadgetState(useCustomJavaGadget)
             WritePreferenceString("JavaPath", GetGadgetText(javaPathGadget))
@@ -776,7 +784,7 @@ Procedure downloadFiles(downloadAllFiles.i)
           EndIf
         Next
 
-        If IsGadget(progressBar) : SetGadgetState(progressBar, lines) : EndIf
+        If IsGadget(progressBar) : SetGadgetState(progressBar, linesTotal - lines) : EndIf
         If IsGadget(filesLeft) : SetGadgetText(filesLeft, "Files remaining: " + lines): EndIf
 
         Delay(500)
@@ -811,7 +819,7 @@ Procedure downloadFiles(downloadAllFiles.i)
           EndIf
         EndIf
 
-        If IsGadget(progressBar) : SetGadgetState(progressBar, lines) : EndIf
+        If IsGadget(progressBar) : SetGadgetState(progressBar, linesTotal - lines) : EndIf
         If IsGadget(filesLeft) : SetGadgetText(filesLeft, "Files remaining: " + lines) : EndIf
       Wend
     EndIf
