@@ -245,7 +245,7 @@ If OpenWindow(0, #PB_Ignore, #PB_Ignore, windowWidth, windowHeight, "Vortex Mine
 
                   clientArguments = ReplaceString(clientArguments, "${auth_player_name}", playerName)
                   clientArguments = ReplaceString(clientArguments, "${version_name}", clientVersion)
-                  clientArguments = ReplaceString(clientArguments, "${game_directory}", workingDirectory)
+                  clientArguments = ReplaceString(clientArguments, "${game_directory}", Chr(34) + workingDirectory + Chr(34))
                   clientArguments = ReplaceString(clientArguments, "${assets_root}", "assets")
                   clientArguments = ReplaceString(clientArguments, "${auth_uuid}", uuid)
                   clientArguments = ReplaceString(clientArguments, "${auth_access_token}", "00000000000000000000000000000000")
