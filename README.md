@@ -8,7 +8,7 @@ Fast, lightweight and easy to use Minecraft launcher. Natively available for Win
 
 * Lightweight and fast
 * Open-Source
-* Cross-Platform (available for Windows, Linux and macOS)
+* Cross-Platform (available for Windows and Linux)
 * Supports all Minecraft versions
 * Supports Forge and other APIs
 * Downloads all Minecraft versions
