@@ -30,7 +30,7 @@ Define.i downloadMissingLibrariesGadget, downloadThreadsGadget, asyncDownloadGad
 Define.i i
 
 Define.s playerNameDefault = "Name", ramAmountDefault = "700", javaBinaryPathDefault = "/usr/bin/java"
-Define.s customLaunchArgumentsDefault = "-Xss1M -XX:+UnlockExperimentalVMOptions -XX:+UseG1GC -XX:G1NewSizePercent=20 -XX:G1ReservePercent=20 -XX:MaxGCPauseMillis=50 -XX:G1HeapRegionSize=16M"
+Define.s customLaunchArgumentsDefault = "-Xss1M -XX:+UnlockExperimentalVMOptions -XX:+UseG1GC -XX:G1NewSizePercent=20 -XX:G1ReservePercent=20 -XX:MaxGCPauseMillis=50 -XX:G1HeapRegionSize=32M"
 Define.s customOldLaunchArgumentsDefault = "-XX:+UseConcMarkSweepGC -XX:+CMSIncrementalMode -XX:-UseAdaptiveSizePolicy -Xmn128M"
 Define.i downloadThreadsAmountDefault = 10
 Define.i asyncDownloadDefault = 0
@@ -42,7 +42,7 @@ Define.i useCustomJavaDefault = 0
 Define.i useCustomParamsDefault = 0
 Define.i keepLauncherOpenDefault = 0
 
-Define.s launcherVersion = "1.1.9"
+Define.s launcherVersion = "1.1.10"
 Define.s launcherDeveloper = "Kron(4ek)"
 
 Declare assetsToResources(assetsIndex.s)
@@ -93,7 +93,7 @@ If OpenWindow(0, #PB_Ignore, #PB_Ignore, windowWidth, windowHeight, "Vortex Mine
   EndIf
 
   launcherAuthorGadget = TextGadget(#PB_Any, 2, windowHeight - 10, 70, 20, "by " + launcherDeveloper)
-  launcherVersionGadget = TextGadget(#PB_Any, windowWidth - 35, windowHeight - 10, 50, 20, "v" + launcherVersion)
+  launcherVersionGadget = TextGadget(#PB_Any, windowWidth - 37, windowHeight - 10, 50, 20, "v" + launcherVersion)
   If LoadFont(1, "Ariral", 7)
     font = FontID(1) : SetGadgetFont(launcherAuthorGadget, font) : SetGadgetFont(launcherVersionGadget, font)
   EndIf
@@ -242,7 +242,7 @@ If OpenWindow(0, #PB_Ignore, #PB_Ignore, windowWidth, windowHeight, "Vortex Mine
                   clientArguments = ReplaceString(clientArguments, "${auth_access_token}", "00000000000000000000000000000000")
                   clientArguments = ReplaceString(clientArguments, "${user_properties}", "{}")
                   clientArguments = ReplaceString(clientArguments, "${user_type}", "mojang")
-                  clientArguments = ReplaceString(clientArguments, "${version_type}", "client")
+                  clientArguments = ReplaceString(clientArguments, "${version_type}", "release")
                   clientArguments = ReplaceString(clientArguments, "${assets_index_name}", assetsIndex)
                   clientArguments = ReplaceString(clientArguments, "${auth_session}", "00000000000000000000000000000000")
                   clientArguments = ReplaceString(clientArguments, "${game_assets}", "resources")
