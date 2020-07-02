@@ -181,7 +181,7 @@ If OpenWindow(0, #PB_Ignore, #PB_Ignore, windowWidth, windowHeight, "Vortex Mine
                     inheritsJsonObject = JSONValue(inheritsJson)
                     jsonInheritsArgumentsModernMember = GetJSONMember(inheritsJsonObject, "arguments")
 
-					librariesString = ""
+                    librariesString = ""
                     librariesString + parseLibraries(inheritsClientJar, downloadMissingLibraries)
                     assetsIndex = GetJSONString(GetJSONMember(JSONValue(inheritsJson), "assets"))
                   Else
@@ -209,7 +209,7 @@ If OpenWindow(0, #PB_Ignore, #PB_Ignore, windowWidth, windowHeight, "Vortex Mine
                   ElseIf jsonArgumentsModernMember
                     jsonArgumentsArray = GetJSONMember(jsonArgumentsModernMember, "game")
 
-					clientArguments = ""
+                    clientArguments = ""
                     For i = 0 To JSONArraySize(jsonArgumentsArray) - 1
                       jsonArrayElement = GetJSONElement(jsonArgumentsArray, i)
 
@@ -287,7 +287,7 @@ If OpenWindow(0, #PB_Ignore, #PB_Ignore, windowWidth, windowHeight, "Vortex Mine
             EndIf
           Else
             If playerName = ""
-			  MessageRequester("Error", "Enter your desired name.")
+              MessageRequester("Error", "Enter your desired name.")
             ElseIf ramAmount = ""
               MessageRequester("Error", "Enter RAM amount.")
             ElseIf Len(playerName) < 3
@@ -540,7 +540,7 @@ Procedure findInstalledVersions()
     DisableGadget(playButton, 1)
     DisableGadget(versionsGadget, 1) : AddGadgetItem(versionsGadget, 0, "Versions not found") : SetGadgetState(versionsGadget, 0)
   Else
-	  generateProfileJson()
+    generateProfileJson()
   EndIf
 EndProcedure
 

@@ -194,7 +194,7 @@ If OpenWindow(0, #PB_Ignore, #PB_Ignore, windowWidth, windowHeight, "Vortex Mine
                     inheritsJsonObject = JSONValue(inheritsJson)
                     jsonInheritsArgumentsModernMember = GetJSONMember(inheritsJsonObject, "arguments")
 
-					librariesString = ""
+                    librariesString = ""
                     librariesString + parseLibraries(inheritsClientJar, downloadMissingLibraries)
                     assetsIndex = GetJSONString(GetJSONMember(JSONValue(inheritsJson), "assets"))
                   Else
@@ -222,7 +222,7 @@ If OpenWindow(0, #PB_Ignore, #PB_Ignore, windowWidth, windowHeight, "Vortex Mine
                   ElseIf jsonArgumentsModernMember
                     jsonArgumentsArray = GetJSONMember(jsonArgumentsModernMember, "game")
 
-					clientArguments = ""
+                    clientArguments = ""
                     For i = 0 To JSONArraySize(jsonArgumentsArray) - 1
                       jsonArrayElement = GetJSONElement(jsonArgumentsArray, i)
 
@@ -300,7 +300,7 @@ If OpenWindow(0, #PB_Ignore, #PB_Ignore, windowWidth, windowHeight, "Vortex Mine
             EndIf
           Else
             If playerName = ""
-			  MessageRequester("Error", "Enter your desired name.")
+              MessageRequester("Error", "Enter your desired name.")
             ElseIf ramAmount = ""
               MessageRequester("Error", "Enter RAM amount.")
             ElseIf Len(playerName) < 3
@@ -996,7 +996,7 @@ Procedure assetsToResources(assetsIndex.s)
         fileSize = GetJSONInteger(GetJSONMember(GetJSONMember(jsonObjectObjects, JSONMemberKey(jsonObjectObjects)), "size"))
         fileName = JSONMemberKey(jsonObjectObjects)
 
-		fileName = ReplaceString(fileName, "/", "\")
+        fileName = ReplaceString(fileName, "/", "\")
 
         If FileSize("resources\" + fileName) <> fileSize
           CreateDirectoryRecursive("resources\" + GetPathPart(fileName))
