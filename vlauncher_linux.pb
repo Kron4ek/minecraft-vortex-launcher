@@ -181,6 +181,7 @@ If OpenWindow(0, #PB_Ignore, #PB_Ignore, windowWidth, windowHeight, "Vortex Mine
                     inheritsJsonObject = JSONValue(inheritsJson)
                     jsonInheritsArgumentsModernMember = GetJSONMember(inheritsJsonObject, "arguments")
 
+					librariesString = ""
                     librariesString + parseLibraries(inheritsClientJar, downloadMissingLibraries)
                     assetsIndex = GetJSONString(GetJSONMember(JSONValue(inheritsJson), "assets"))
                   Else
@@ -208,6 +209,7 @@ If OpenWindow(0, #PB_Ignore, #PB_Ignore, windowWidth, windowHeight, "Vortex Mine
                   ElseIf jsonArgumentsModernMember
                     jsonArgumentsArray = GetJSONMember(jsonArgumentsModernMember, "game")
 
+					clientArguments = ""
                     For i = 0 To JSONArraySize(jsonArgumentsArray) - 1
                       jsonArrayElement = GetJSONElement(jsonArgumentsArray, i)
 
