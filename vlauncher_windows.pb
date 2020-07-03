@@ -72,6 +72,8 @@ asyncDownload = ReadPreferenceInteger("AsyncDownload", asyncDownloadDefault)
 
 DeleteFile(tempDirectory + "vlauncher_download_list.txt")
 
+RemoveEnvironmentVariable("_JAVA_OPTIONS")
+
 windowWidth = 250
 windowHeight = 250
 
