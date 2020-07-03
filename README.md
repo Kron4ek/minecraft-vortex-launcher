@@ -19,6 +19,12 @@ Fast, lightweight and easy to use Minecraft launcher. Natively available for Win
 
 ---
 
+## Download
+
+Check the [**Releases**](https://github.com/Kron4ek/minecraft-vortex-launcher/releases) page to download the latest launcher version.
+
+---
+
 ## Screenshots
 
 ![settings](https://i.imgur.com/dkiweug.png)
