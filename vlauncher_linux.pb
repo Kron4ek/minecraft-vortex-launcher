@@ -42,7 +42,7 @@ Define.i useCustomJavaDefault = 0
 Define.i useCustomParamsDefault = 0
 Define.i keepLauncherOpenDefault = 0
 
-Define.s launcherVersion = "1.1.11"
+Define.s launcherVersion = "1.1.12"
 Define.s launcherDeveloper = "Kron(4ek)"
 
 Declare assetsToResources(assetsIndex.s)
@@ -89,14 +89,14 @@ If OpenWindow(0, #PB_Ignore, #PB_Ignore, windowWidth, windowHeight, "Vortex Mine
   downloadButton = ButtonGadget(#PB_Any, gadgetsIndent, 160, gadgetsWidth, gadgetsHeight, "Downloader")
   settingsButton = ButtonGadget(#PB_Any, gadgetsIndent, 200, gadgetsWidth, gadgetsHeight, "Settings")
 
-  If LoadFont(0, "Ariral", 10, #PB_Font_Bold)
+  If LoadFont(0, "Arial", 10, #PB_Font_Bold)
     SetGadgetFont(playButton, FontID(0))
     SetGadgetFont(downloadButton, FontID(0))
   EndIf
 
   launcherAuthorGadget = TextGadget(#PB_Any, 2, windowHeight - 10, 70, 20, "by " + launcherDeveloper)
   launcherVersionGadget = TextGadget(#PB_Any, windowWidth - 37, windowHeight - 10, 50, 20, "v" + launcherVersion)
-  If LoadFont(1, "Ariral", 7)
+  If LoadFont(1, "Arial", 7)
     font = FontID(1) : SetGadgetFont(launcherAuthorGadget, font) : SetGadgetFont(launcherVersionGadget, font)
   EndIf
 
@@ -114,6 +114,8 @@ If OpenWindow(0, #PB_Ignore, #PB_Ignore, windowWidth, windowHeight, "Vortex Mine
           javaBinaryPath = "java"
           downloadMissingLibraries = ReadPreferenceInteger("DownloadMissingLibs", downloadMissingLibrariesDefault)
           versionSecondDigit = Val(StringField(clientVersion, 2, "."))
+          librariesString = ""
+          clientArguments = ""
 
           If versionSecondDigit < 13
             customLaunchArguments = customOldLaunchArgumentsDefault
@@ -174,6 +176,23 @@ If OpenWindow(0, #PB_Ignore, #PB_Ignore, windowWidth, windowHeight, "Vortex Mine
 
                 nativesPath = "versions/" + StringField(clientJarFile, 2, "/") + "/natives"
 
+                jsonArgumentsMember = GetJSONMember(jsonObject, "minecraftArguments")
+                jsonArgumentsModernMember = GetJSONMember(jsonObject, "arguments")
+
+                If jsonArgumentsMember
+                  clientArguments = GetJSONString(jsonArgumentsMember)
+                ElseIf jsonArgumentsModernMember
+                  jsonArgumentsArray = GetJSONMember(jsonArgumentsModernMember, "game")
+
+                  For i = 0 To JSONArraySize(jsonArgumentsArray) - 1
+                    jsonArrayElement = GetJSONElement(jsonArgumentsArray, i)
+
+                    If JSONType(jsonArrayElement) = #PB_JSON_String
+                      clientArguments + " " + GetJSONString(jsonArrayElement) + " "
+                    EndIf
+                  Next
+                EndIf
+
                 If jsonInheritsFromMember
                   inheritsClientJar = GetJSONString(jsonInheritsFromMember)
 
@@ -183,9 +202,22 @@ If OpenWindow(0, #PB_Ignore, #PB_Ignore, windowWidth, windowHeight, "Vortex Mine
                     inheritsJsonObject = JSONValue(inheritsJson)
                     jsonInheritsArgumentsModernMember = GetJSONMember(inheritsJsonObject, "arguments")
 
-                    librariesString = ""
+                    If jsonInheritsArgumentsModernMember
+                      jsonArgumentsArray = GetJSONMember(jsonInheritsArgumentsModernMember, "game")
+
+                      For i = 0 To JSONArraySize(jsonArgumentsArray) - 1
+                        jsonArrayElement = GetJSONElement(jsonArgumentsArray, i)
+
+                        If JSONType(jsonArrayElement) = #PB_JSON_String
+                          clientArguments + " " + GetJSONString(jsonArrayElement) + " "
+                        EndIf
+                      Next
+                    EndIf
+
                     librariesString + parseLibraries(inheritsClientJar, downloadMissingLibraries)
                     assetsIndex = GetJSONString(GetJSONMember(JSONValue(inheritsJson), "assets"))
+
+                    FreeJSON(inheritsJson)
                   Else
                     MessageRequester("Error", inheritsClientJar + ".json file is missing!") : Break
                   EndIf
@@ -202,36 +234,6 @@ If OpenWindow(0, #PB_Ignore, #PB_Ignore, windowWidth, windowHeight, "Vortex Mine
                 If FileSize(clientJarFile) > 0
                   librariesString = parseLibraries(clientVersion, downloadMissingLibraries) + librariesString
                   clientMainClass = GetJSONString(GetJSONMember(jsonObject, "mainClass"))
-
-                  jsonArgumentsMember = GetJSONMember(jsonObject, "minecraftArguments")
-                  jsonArgumentsModernMember = GetJSONMember(jsonObject, "arguments")
-
-                  If jsonArgumentsMember
-                    clientArguments = GetJSONString(jsonArgumentsMember)
-                  ElseIf jsonArgumentsModernMember
-                    jsonArgumentsArray = GetJSONMember(jsonArgumentsModernMember, "game")
-
-                    clientArguments = ""
-                    For i = 0 To JSONArraySize(jsonArgumentsArray) - 1
-                      jsonArrayElement = GetJSONElement(jsonArgumentsArray, i)
-
-                      If JSONType(jsonArrayElement) = #PB_JSON_String
-                        clientArguments + " " + GetJSONString(jsonArrayElement) + " "
-                      EndIf
-                    Next
-                  EndIf
-
-                  If jsonInheritsArgumentsModernMember
-                    jsonArgumentsArray = GetJSONMember(jsonInheritsArgumentsModernMember, "game")
-
-                    For i = 0 To JSONArraySize(jsonArgumentsArray) - 1
-                      jsonArrayElement = GetJSONElement(jsonArgumentsArray, i)
-
-                      If JSONType(jsonArrayElement) = #PB_JSON_String
-                        clientArguments + " " + GetJSONString(jsonArrayElement) + " "
-                      EndIf
-                    Next
-                  EndIf
 
                   UseMD5Fingerprint()
 
@@ -279,7 +281,6 @@ If OpenWindow(0, #PB_Ignore, #PB_Ignore, windowWidth, windowHeight, "Vortex Mine
                   MessageRequester("Error", "Client jar file is missing!")
                 EndIf
 
-                FreeJSON(inheritsJson)
                 FreeJSON(jsonFile)
               Else
                 MessageRequester("Error", "Client json file is missing!")

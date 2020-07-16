@@ -1,3 +1,6 @@
+v1.1.12
+	* Fixed relaunching the game when the launcher remains open (yes, again)
+---------------------------------------------------------------------
 v1.1.11
 	* Fixed relaunching the game when the launcher remains open ("Keep the launcher open" option)
 	* The launcher now unsets _JAVA_OPTIONS environment variable
