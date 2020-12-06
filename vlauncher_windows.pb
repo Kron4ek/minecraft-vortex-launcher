@@ -8,7 +8,7 @@ Global.i downloadOkButton
 Global.i downloadThread
 Global.i downloadThreadsAmount
 Global.i asyncDownload
-Global.i versionsGadget, playButton, javaListGadget
+Global.i versionsGadget, playButton, javaListGadget, deleteVersionButton
 Global.i progressBar, filesLeft, progressWindow, downloadingClientTextGadget
 Global.i versionsDownloadGadget, downloadVersionButton
 Global.i forceDownloadMissingLibraries
@@ -45,7 +45,7 @@ Define.i keepLauncherOpenDefault = 0
 Global.i useCustomJavaDefault = 0
 Global.s javaBinaryPathDefault = "C:\jre8\bin\javaw.exe"
 
-Define.s launcherVersion = "1.1.12"
+Define.s launcherVersion = "1.1.13"
 Define.s launcherDeveloper = "Kron(4ek)"
 
 Declare assetsToResources(assetsIndex.s)
@@ -75,7 +75,7 @@ DeleteFile(tempDirectory + "vlauncher_download_list.txt")
 RemoveEnvironmentVariable("_JAVA_OPTIONS")
 
 windowWidth = 250
-windowHeight = 250
+windowHeight = 295
 
 If OpenWindow(0, #PB_Ignore, #PB_Ignore, windowWidth, windowHeight, "Vortex Minecraft Launcher")
 
@@ -91,11 +91,12 @@ If OpenWindow(0, #PB_Ignore, #PB_Ignore, windowWidth, windowHeight, "Vortex Mine
   SetGadgetAttribute(ramGadget, #PB_String_MaximumLength, 6)
 
   versionsGadget = ComboBoxGadget(#PB_Any, gadgetsIndent, 65, gadgetsWidth, gadgetsHeight)
-  javaListGadget = ComboBoxGadget(#PB_Any, gadgetsIndent, 95, gadgetsWidth, gadgetsHeight)
+  deleteVersionButton = ButtonGadget(#PB_Any, gadgetsIndent, 92, gadgetsWidth, gadgetsHeight, "Delete this version")
+  javaListGadget = ComboBoxGadget(#PB_Any, gadgetsIndent, 135, gadgetsWidth, gadgetsHeight)
 
-  playButton = ButtonGadget(#PB_Any, gadgetsIndent, 130, gadgetsWidth, gadgetsHeight + 5, "Play")
-  downloadButton = ButtonGadget(#PB_Any, gadgetsIndent, 165, gadgetsWidth, gadgetsHeight + 5, "Downloader")
-  settingsButton = ButtonGadget(#PB_Any, gadgetsIndent, 200, gadgetsWidth, gadgetsHeight + 5, "Settings")
+  playButton = ButtonGadget(#PB_Any, gadgetsIndent, 165, gadgetsWidth, gadgetsHeight + 5, "Play")
+  downloadButton = ButtonGadget(#PB_Any, gadgetsIndent, 200, gadgetsWidth, gadgetsHeight + 5, "Downloader")
+  settingsButton = ButtonGadget(#PB_Any, gadgetsIndent, 235, gadgetsWidth, gadgetsHeight + 5, "Settings")
 
   If LoadFont(0, "Arial", 10, #PB_Font_Bold)
     SetGadgetFont(playButton, FontID(0))
@@ -310,6 +311,12 @@ If OpenWindow(0, #PB_Ignore, #PB_Ignore, windowWidth, windowHeight, "Vortex Mine
               MessageRequester("Error", "Name is too short! Minimum length is 3.")
             EndIf
           EndIf
+        Case deleteVersionButton
+          clientVersion = GetGadgetText(versionsGadget)
+          MessageRequester("Delete", "Folder 'versions\" + clientVersion + "' deleted.")
+          DeleteDirectory("versions\" + clientVersion, "*.*", #PB_FileSystem_Recursive)
+          ClearGadgetItems(versionsGadget)
+          findInstalledVersions()
         Case downloadButton
           InitNetwork()
 
@@ -526,6 +533,7 @@ Procedure findInstalledVersions()
 
   DisableGadget(playButton, 0)
   DisableGadget(versionsGadget, 0)
+  DisableGadget(deleteVersionButton, 0)
 
   If directory
     While NextDirectoryEntry(directory)
@@ -556,6 +564,7 @@ Procedure findInstalledVersions()
   If Not CountGadgetItems(versionsGadget)
     DisableGadget(playButton, 1)
     DisableGadget(versionsGadget, 1) : AddGadgetItem(versionsGadget, 0, "Versions not found") : SetGadgetState(versionsGadget, 0)
+    DisableGadget(deleteVersionButton, 1)
   Else
     generateProfileJson()
   EndIf
@@ -781,13 +790,13 @@ Procedure downloadFiles(downloadAllFiles.i)
                 lines - 1
               EndIf
             EndIf
-          ElseIf HTTPProgress(httpArray(i)) = #PB_Http_Success
+          ElseIf HTTPProgress(httpArray(i)) = #PB_HTTP_Success
             currentDownloads - 1
             lines - 1
 
             FinishHTTP(httpArray(i))
             httpArray(i) = 0
-          ElseIf HTTPProgress(httpArray(i)) = #PB_Http_Failed
+          ElseIf HTTPProgress(httpArray(i)) = #PB_HTTP_Failed
             FinishHTTP(httpArray(i))
 
             If retries(i) < allowedRetries
@@ -1022,3 +1031,12 @@ Procedure.s removeSpacesFromVersionName(clientVersion.s)
 
   ProcedureReturn newVersionName
 EndProcedure
+
+; IDE Options = PureBasic 5.70 LTS (Windows - x64)
+; CursorPosition = 795
+; FirstLine = 976
+; Folding = --
+; EnableThread
+; EnableXP
+; UseIcon = D:\games\Minecraft\1.ico
+; Executable = D:\games\Minecraft\VLauncher-1.1.13.exe
