@@ -1031,12 +1031,3 @@ Procedure.s removeSpacesFromVersionName(clientVersion.s)
 
   ProcedureReturn newVersionName
 EndProcedure
-
-; IDE Options = PureBasic 5.70 LTS (Windows - x64)
-; CursorPosition = 795
-; FirstLine = 976
-; Folding = --
-; EnableThread
-; EnableXP
-; UseIcon = D:\games\Minecraft\1.ico
-; Executable = D:\games\Minecraft\VLauncher-1.1.13.exe
