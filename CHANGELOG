@@ -1,3 +1,6 @@
+v1.1.13
+	* Add button to delete selected version (folder) of Minecraft
+---------------------------------------------------------------------
 v1.1.12
 	* Fixed relaunching the game when the launcher remains open (yes, again)
 ---------------------------------------------------------------------
