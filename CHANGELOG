@@ -1,3 +1,8 @@
+v1.1.13
+	* Fixed launching Forge with new client versions (1.17+)
+	* Fixed launching Fabric with new Java versions
+	* Fixed detection of old client versions
+---------------------------------------------------------------------
 v1.1.12
 	* Fixed relaunching the game when the launcher remains open (yes, again)
 ---------------------------------------------------------------------

@@ -21,11 +21,11 @@ Define.i saveLaunchString, versionsTypeGadget, saveLaunchStringGadget, launchStr
 Define.i argsTextGadget, javaBinaryPathTextGadget, downloadThreadsTextGadget, downloadAllFilesGadget, javaPathGadget
 Define.i gadgetsWidth, gadgetsHeight, gadgetsIndent, windowWidth, windowHeight
 Define.i listOfFiles, jsonFile, jsonObject, jsonObjectObjects, fileSize, jsonJarMember, jsonArgumentsArray, jsonArrayElement, inheritsJson, clientSize
-Define.i versionSecondDigit
+Define.i releaseTimeMember, releaseTime, jsonJvmArray
 
 Define.s playerName, ramAmount, clientVersion, javaBinaryPath, fullLaunchString, assetsIndex, clientUrl, fileHash, versionToDownload
 Define.s assetsIndex, clientMainClass, clientArguments, inheritsClientJar, customLaunchArguments, clientJarFile, nativesPath, librariesString
-Define.s uuid
+Define.s uuid, jvmArguments
 
 Define.i downloadMissingLibraries, jsonArgumentsMember, jsonArgumentsModernMember, jsonInheritsFromMember
 Define.i downloadMissingLibrariesGadget, downloadThreadsGadget, asyncDownloadGadget, saveSettingsButton, useCustomJavaGadget, useCustomParamsGadget, keepLauncherOpenGadget
@@ -45,8 +45,8 @@ Define.i keepLauncherOpenDefault = 0
 Global.i useCustomJavaDefault = 0
 Global.s javaBinaryPathDefault = "C:\jre8\bin\javaw.exe"
 
-Define.s launcherVersion = "1.1.12"
-Define.s launcherDeveloper = "Kron(4ek)"
+Define.s launcherVersion = "1.1.13"
+Define.s launcherDeveloper = "Kron4ek"
 
 Declare assetsToResources(assetsIndex.s)
 Declare findJava()
@@ -122,15 +122,8 @@ If OpenWindow(0, #PB_Ignore, #PB_Ignore, windowWidth, windowHeight, "Vortex Mine
           playerName = GetGadgetText(nameGadget)
           javaBinaryPath = GetGadgetText(javaListGadget)
           downloadMissingLibraries = ReadPreferenceInteger("DownloadMissingLibs", downloadMissingLibrariesDefault)
-          versionSecondDigit = Val(StringField(clientVersion, 2, "."))
           librariesString = ""
           clientArguments = ""
-
-          If versionSecondDigit < 13
-            customLaunchArguments = customOldLaunchArgumentsDefault
-          Else
-            customLaunchArguments = customLaunchArgumentsDefault
-          EndIf
 
           If FindString(clientVersion, " ")
             clientVersion = removeSpacesFromVersionName(clientVersion)
@@ -142,10 +135,6 @@ If OpenWindow(0, #PB_Ignore, #PB_Ignore, windowWidth, windowHeight, "Vortex Mine
 
           If FindString(playerName, " ")
             playerName = ReplaceString(playerName, " ", "")
-          EndIf
-
-          If ReadPreferenceInteger("UseCustomParameters", useCustomParamsDefault)
-            customLaunchArguments = ReadPreferenceString("LaunchArguments", customLaunchArgumentsDefault)
           EndIf
 
           If ramAmount And Len(playerName) >= 3
@@ -171,23 +160,33 @@ If OpenWindow(0, #PB_Ignore, #PB_Ignore, windowWidth, windowHeight, "Vortex Mine
               jsonFile = ParseJSON(#PB_Any, fileRead("versions\" + clientVersion + "\" + clientVersion + ".json"))
 
               If jsonFile
+                clientJarFile = "versions\" + clientVersion + "\" + clientVersion + ".jar"
+                nativesPath = "versions\" + clientVersion + "\natives"
+
                 jsonObject = JSONValue(jsonFile)
 
                 jsonJarMember = GetJSONMember(jsonObject, "jar")
                 jsonInheritsFromMember = GetJSONMember(jsonObject, "inheritsFrom")
 
-                If jsonJarMember
-                  clientJarFile = GetJSONString(jsonJarMember)
-                  clientJarFile = "versions\" + clientJarFile + "\" + clientJarFile + ".jar"
-                ElseIf jsonInheritsFromMember
-                  inheritsClientJar = GetJSONString(jsonInheritsFromMember)
-
-                  clientJarFile = "versions\" + inheritsClientJar + "\" + inheritsClientJar + ".jar"
-                ElseIf FileSize("versions\" + clientVersion + "\" + clientVersion + ".jar") > 0
-                  clientJarFile = "versions\" + clientVersion + "\" + clientVersion + ".jar"
+                If jsonInheritsFromMember Or jsonJarMember
+                  If jsonInheritsFromMember
+                    inheritsClientJar = GetJSONString(jsonInheritsFromMember)
+                  Else
+                    inheritsClientJar = GetJSONString(jsonJarMember)
+                  EndIf
+                  
+                  If FileSize(clientJarFile) < 1 And FileSize("versions\" + inheritsClientJar + "\" + inheritsClientJar + ".jar") > 0
+                    CopyFile("versions\" + inheritsClientJar + "\" + inheritsClientJar + ".jar", clientJarFile)
+                  EndIf
+                  
+                  nativesPath = "versions\" + inheritsClientJar + "\natives"
                 EndIf
-
-                nativesPath = "versions\" + StringField(clientJarFile, 2, "\") + "\natives"
+                
+                releaseTimeMember = GetJSONMember(jsonObject, "releaseTime")
+                
+                If releaseTimeMember
+                  releaseTime = Val(StringField(GetJSONString(releaseTimeMember), 1, "-")) * 365 + Val(StringField(GetJSONString(releaseTimeMember), 2, "-")) * 30
+                EndIf
 
                 jsonArgumentsMember = GetJSONMember(jsonObject, "minecraftArguments")
                 jsonArgumentsModernMember = GetJSONMember(jsonObject, "arguments")
@@ -196,6 +195,7 @@ If OpenWindow(0, #PB_Ignore, #PB_Ignore, windowWidth, windowHeight, "Vortex Mine
                   clientArguments = GetJSONString(jsonArgumentsMember)
                 ElseIf jsonArgumentsModernMember
                   jsonArgumentsArray = GetJSONMember(jsonArgumentsModernMember, "game")
+                  jsonJvmArray = GetJSONMember(jsonArgumentsModernMember, "jvm")
 
                   For i = 0 To JSONArraySize(jsonArgumentsArray) - 1
                     jsonArrayElement = GetJSONElement(jsonArgumentsArray, i)
@@ -204,6 +204,16 @@ If OpenWindow(0, #PB_Ignore, #PB_Ignore, windowWidth, windowHeight, "Vortex Mine
                       clientArguments + " " + GetJSONString(jsonArrayElement) + " "
                     EndIf
                   Next
+                  
+                  If jsonJvmArray
+                    For i = 0 To JSONArraySize(jsonJvmArray) - 1
+                      jsonArrayElement = GetJSONElement(jsonJvmArray, i)
+
+                      If JSONType(jsonArrayElement) = #PB_JSON_String
+                        jvmArguments + " " + GetJSONString(jsonArrayElement) + " "
+                      EndIf
+                    Next
+                  EndIf
                 EndIf
 
                 If jsonInheritsFromMember
@@ -217,6 +227,7 @@ If OpenWindow(0, #PB_Ignore, #PB_Ignore, windowWidth, windowHeight, "Vortex Mine
 
                     If jsonInheritsArgumentsModernMember
                       jsonArgumentsArray = GetJSONMember(jsonInheritsArgumentsModernMember, "game")
+                      jsonJvmArray = GetJSONMember(jsonInheritsArgumentsModernMember, "jvm")
 
                       For i = 0 To JSONArraySize(jsonArgumentsArray) - 1
                         jsonArrayElement = GetJSONElement(jsonArgumentsArray, i)
@@ -225,10 +236,26 @@ If OpenWindow(0, #PB_Ignore, #PB_Ignore, windowWidth, windowHeight, "Vortex Mine
                           clientArguments + " " + GetJSONString(jsonArrayElement) + " "
                         EndIf
                       Next
+                      
+                      If jsonJvmArray
+                        For i = 0 To JSONArraySize(jsonJvmArray) - 1
+                          jsonArrayElement = GetJSONElement(jsonJvmArray, i)
+
+                          If JSONType(jsonArrayElement) = #PB_JSON_String
+                            jvmArguments + " " + GetJSONString(jsonArrayElement) + " "
+                          EndIf
+                        Next
+                      EndIf
                     EndIf
 
                     librariesString + parseLibraries(inheritsClientJar, downloadMissingLibraries)
                     assetsIndex = GetJSONString(GetJSONMember(JSONValue(inheritsJson), "assets"))
+                    
+                    releaseTimeMember = GetJSONMember(inheritsJsonObject, "releaseTime")
+                    
+                    If releaseTimeMember
+                      releaseTime = Val(StringField(GetJSONString(releaseTimeMember), 1, "-")) * 365 + Val(StringField(GetJSONString(releaseTimeMember), 2, "-")) * 30
+                    EndIf
 
                     FreeJSON(inheritsJson)
                   Else
@@ -237,7 +264,7 @@ If OpenWindow(0, #PB_Ignore, #PB_Ignore, windowWidth, windowHeight, "Vortex Mine
                 Else
                   If GetJSONMember(jsonObject, "assets")
                     assetsIndex = GetJSONString(GetJSONMember(jsonObject, "assets"))
-                  ElseIf versionSecondDigit < 6
+                  ElseIf releaseTime > 0 And releaseTime < 734925
                     assetsIndex = "pre-1.6"
                   Else
                     assetsIndex = "legacy"
@@ -265,7 +292,13 @@ If OpenWindow(0, #PB_Ignore, #PB_Ignore, windowWidth, windowHeight, "Vortex Mine
                   clientArguments = ReplaceString(clientArguments, "${assets_index_name}", assetsIndex)
                   clientArguments = ReplaceString(clientArguments, "${auth_session}", "00000000000000000000000000000000")
                   clientArguments = ReplaceString(clientArguments, "${game_assets}", "resources")
-                  clientArguments = ReplaceString(clientArguments, "  ", " ")
+
+                  jvmArguments = ReplaceString(jvmArguments, "${classpath}", librariesString + clientJarFile)
+                  jvmArguments = ReplaceString(jvmArguments, "${library_directory}", "libraries")
+                  jvmArguments = ReplaceString(jvmArguments, "${classpath_separator}", ";")
+                  jvmArguments = ReplaceString(jvmArguments, "${natives_directory}", nativesPath)
+                  jvmArguments = ReplaceString(jvmArguments, "-Dminecraft.launcher.brand=${launcher_name}", "")
+                  jvmArguments = ReplaceString(jvmArguments, "-Dminecraft.launcher.version=${launcher_version}", "")
 
                   If assetsIndex = "pre-1.6" Or assetsIndex = "legacy"
                     assetsToResources(assetsIndex)
@@ -275,7 +308,21 @@ If OpenWindow(0, #PB_Ignore, #PB_Ignore, windowWidth, windowHeight, "Vortex Mine
                     downloadFiles(0)
                   EndIf
 
-                  fullLaunchString = "-Xmx" + ramAmount + "M " + customLaunchArguments + " " + Chr(34) + "-Djava.library.path=" + nativesPath + Chr(34) + " -cp " + Chr(34) + librariesString + clientJarFile + Chr(34) + " " + clientMainClass + " " + clientArguments
+                  If jvmArguments = ""
+                    jvmArguments = Chr(34) + "-Djava.library.path=" + nativesPath + Chr(34) + " -cp " + Chr(34) + librariesString + clientJarFile + Chr(34)
+                  EndIf
+                  
+                  If releaseTime > 0 And releaseTime < 736780
+                    customLaunchArguments = customOldLaunchArgumentsDefault
+                  Else
+                    customLaunchArguments = customLaunchArgumentsDefault
+                  EndIf
+                  
+                  If ReadPreferenceInteger("UseCustomParameters", useCustomParamsDefault)
+                    customLaunchArguments = ReadPreferenceString("LaunchArguments", customLaunchArgumentsDefault)
+                  EndIf
+
+                  fullLaunchString = "-Xmx" + ramAmount + "M " + customLaunchArguments + " " + jvmArguments + " " + clientMainClass + " " + clientArguments
                   RunProgram(javaBinaryPath, fullLaunchString, workingDirectory)
 
                   saveLaunchString = ReadPreferenceInteger("SaveLaunchString", saveLaunchStringDefault)
@@ -283,6 +330,7 @@ If OpenWindow(0, #PB_Ignore, #PB_Ignore, windowWidth, windowHeight, "Vortex Mine
                     DeleteFile("launch_string.txt")
 
                     launchStringFile = OpenFile(#PB_Any, "launch_string.txt")
+                    fullLaunchString = ReplaceString(fullLaunchString, "  ", " ")
                     WriteString(launchStringFile, Chr(34) + javaBinaryPath + Chr(34) + " " + fullLaunchString)
                     CloseFile(launchStringFile)
                   EndIf
