@@ -42,7 +42,7 @@ Define.i useCustomJavaDefault = 0
 Define.i useCustomParamsDefault = 0
 Define.i keepLauncherOpenDefault = 0
 
-Define.s launcherVersion = "1.1.13"
+Define.s launcherVersion = "1.1.14"
 Define.s launcherDeveloper = "Kron4ek"
 
 Declare assetsToResources(assetsIndex.s)
@@ -149,28 +149,28 @@ If OpenWindow(0, #PB_Ignore, #PB_Ignore, windowWidth, windowHeight, "Vortex Mine
               If jsonFile
                 clientJarFile = "versions/" + clientVersion + "/" + clientVersion + ".jar"
                 nativesPath = "versions/" + clientVersion + "/natives"
-				        
+
                 jsonObject = JSONValue(jsonFile)
 
                 jsonJarMember = GetJSONMember(jsonObject, "jar")
                 jsonInheritsFromMember = GetJSONMember(jsonObject, "inheritsFrom")
-               
+
                 If jsonInheritsFromMember Or jsonJarMember
                   If jsonInheritsFromMember
                     inheritsClientJar = GetJSONString(jsonInheritsFromMember)
                   Else
                     inheritsClientJar = GetJSONString(jsonJarMember)
                   EndIf
-                  
+
                   If FileSize(clientJarFile) < 1 And FileSize("versions/" + inheritsClientJar + "/" + inheritsClientJar + ".jar") > 0
                     CopyFile("versions/" + inheritsClientJar + "/" + inheritsClientJar + ".jar", clientJarFile)
                   EndIf
-                  
+
                   nativesPath = "versions/" + inheritsClientJar + "/natives"
                 EndIf
-                
+
                 releaseTimeMember = GetJSONMember(jsonObject, "releaseTime")
-                
+
                 If releaseTimeMember
                   releaseTime = Val(StringField(GetJSONString(releaseTimeMember), 1, "-")) * 365 + Val(StringField(GetJSONString(releaseTimeMember), 2, "-")) * 30
                 EndIf
@@ -191,7 +191,7 @@ If OpenWindow(0, #PB_Ignore, #PB_Ignore, windowWidth, windowHeight, "Vortex Mine
                       clientArguments + " " + GetJSONString(jsonArrayElement) + " "
                     EndIf
                   Next
-                  
+
                   If jsonJvmArray
                     For i = 0 To JSONArraySize(jsonJvmArray) - 1
                       jsonArrayElement = GetJSONElement(jsonJvmArray, i)
@@ -223,7 +223,7 @@ If OpenWindow(0, #PB_Ignore, #PB_Ignore, windowWidth, windowHeight, "Vortex Mine
                           clientArguments + " " + GetJSONString(jsonArrayElement) + " "
                         EndIf
                       Next
-                      
+
                       If jsonJvmArray
                         For i = 0 To JSONArraySize(jsonJvmArray) - 1
                           jsonArrayElement = GetJSONElement(jsonJvmArray, i)
@@ -239,7 +239,7 @@ If OpenWindow(0, #PB_Ignore, #PB_Ignore, windowWidth, windowHeight, "Vortex Mine
                     assetsIndex = GetJSONString(GetJSONMember(JSONValue(inheritsJson), "assets"))
 
                     releaseTimeMember = GetJSONMember(inheritsJsonObject, "releaseTime")
-                    
+
                     If releaseTimeMember
                       releaseTime = Val(StringField(GetJSONString(releaseTimeMember), 1, "-")) * 365 + Val(StringField(GetJSONString(releaseTimeMember), 2, "-")) * 30
                     EndIf
@@ -267,26 +267,6 @@ If OpenWindow(0, #PB_Ignore, #PB_Ignore, windowWidth, windowHeight, "Vortex Mine
                   uuid = StringFingerprint("OfflinePlayer:" + playerName, #PB_Cipher_MD5)
                   uuid = Left(uuid, 12) + LCase(Hex(Val("$" + Mid(uuid, 13, 2)) & $0f | $30)) + Mid(uuid, 15, 2) + LCase(Hex(Val("$" + Mid(uuid, 17, 2)) & $3f | $80)) + Right(uuid, 14)
 
-                  clientArguments = ReplaceString(clientArguments, "${auth_player_name}", playerName)
-                  clientArguments = ReplaceString(clientArguments, "${version_name}", clientVersion)
-                  clientArguments = ReplaceString(clientArguments, "${game_directory}", workingDirectory)
-                  clientArguments = ReplaceString(clientArguments, "${assets_root}", "assets")
-                  clientArguments = ReplaceString(clientArguments, "${auth_uuid}", uuid)
-                  clientArguments = ReplaceString(clientArguments, "${auth_access_token}", "00000000000000000000000000000000")
-                  clientArguments = ReplaceString(clientArguments, "${user_properties}", "{}")
-                  clientArguments = ReplaceString(clientArguments, "${user_type}", "mojang")
-                  clientArguments = ReplaceString(clientArguments, "${version_type}", "release")
-                  clientArguments = ReplaceString(clientArguments, "${assets_index_name}", assetsIndex)
-                  clientArguments = ReplaceString(clientArguments, "${auth_session}", "00000000000000000000000000000000")
-                  clientArguments = ReplaceString(clientArguments, "${game_assets}", "resources")
-                  
-                  jvmArguments = ReplaceString(jvmArguments, "${classpath}", librariesString + clientJarFile)
-                  jvmArguments = ReplaceString(jvmArguments, "${library_directory}", "libraries")
-                  jvmArguments = ReplaceString(jvmArguments, "${classpath_separator}", ":")
-                  jvmArguments = ReplaceString(jvmArguments, "${natives_directory}", nativesPath)
-                  jvmArguments = ReplaceString(jvmArguments, "-Dminecraft.launcher.brand=${launcher_name}", "")
-                  jvmArguments = ReplaceString(jvmArguments, "-Dminecraft.launcher.version=${launcher_version}", "")
-
                   If assetsIndex = "pre-1.6" Or assetsIndex = "legacy"
                     assetsToResources(assetsIndex)
                   EndIf
@@ -294,22 +274,42 @@ If OpenWindow(0, #PB_Ignore, #PB_Ignore, windowWidth, windowHeight, "Vortex Mine
                   If downloadMissingLibraries
                     downloadFiles(0)
                   EndIf
-                  
+
                   If jvmArguments = ""
                     jvmArguments = Chr(34) + "-Djava.library.path=" + nativesPath + Chr(34) + " -cp " + Chr(34) + librariesString + clientJarFile + Chr(34)
                   EndIf
-                  
+
                   If releaseTime > 0 And releaseTime < 736780
                     customLaunchArguments = customOldLaunchArgumentsDefault
                   Else
                     customLaunchArguments = customLaunchArgumentsDefault
                   EndIf
-                  
+
                   If ReadPreferenceInteger("UseCustomParameters", useCustomParamsDefault)
                     customLaunchArguments = ReadPreferenceString("LaunchArguments", customLaunchArgumentsDefault)
                   EndIf
 
                   fullLaunchString = "-Xmx" + ramAmount + "M " + customLaunchArguments + " " + jvmArguments + " " + clientMainClass + " " + clientArguments
+
+                  fullLaunchString = ReplaceString(fullLaunchString, "${auth_player_name}", playerName)
+                  fullLaunchString = ReplaceString(fullLaunchString, "${version_name}", clientVersion)
+                  fullLaunchString = ReplaceString(fullLaunchString, "${game_directory}", workingDirectory)
+                  fullLaunchString = ReplaceString(fullLaunchString, "${assets_root}", "assets")
+                  fullLaunchString = ReplaceString(fullLaunchString, "${auth_uuid}", uuid)
+                  fullLaunchString = ReplaceString(fullLaunchString, "${auth_access_token}", "00000000000000000000000000000000")
+                  fullLaunchString = ReplaceString(fullLaunchString, "${user_properties}", "{}")
+                  fullLaunchString = ReplaceString(fullLaunchString, "${user_type}", "mojang")
+                  fullLaunchString = ReplaceString(fullLaunchString, "${version_type}", "release")
+                  fullLaunchString = ReplaceString(fullLaunchString, "${assets_index_name}", assetsIndex)
+                  fullLaunchString = ReplaceString(fullLaunchString, "${auth_session}", "00000000000000000000000000000000")
+                  fullLaunchString = ReplaceString(fullLaunchString, "${game_assets}", "resources")
+                  fullLaunchString = ReplaceString(fullLaunchString, "${classpath}", librariesString + clientJarFile)
+                  fullLaunchString = ReplaceString(fullLaunchString, "${library_directory}", "libraries")
+                  fullLaunchString = ReplaceString(fullLaunchString, "${classpath_separator}", ":")
+                  fullLaunchString = ReplaceString(fullLaunchString, "${natives_directory}", nativesPath)
+                  fullLaunchString = ReplaceString(fullLaunchString, "-Dminecraft.launcher.brand=${launcher_name}", "")
+                  fullLaunchString = ReplaceString(fullLaunchString, "-Dminecraft.launcher.version=${launcher_version}", "")
+
                   RunProgram(javaBinaryPath, fullLaunchString, workingDirectory)
 
                   saveLaunchString = ReadPreferenceInteger("SaveLaunchString", saveLaunchStringDefault)
