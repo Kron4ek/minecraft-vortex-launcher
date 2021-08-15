@@ -42,7 +42,7 @@ Define.i useCustomJavaDefault = 0
 Define.i useCustomParamsDefault = 0
 Define.i keepLauncherOpenDefault = 0
 
-Define.s launcherVersion = "1.1.14"
+Define.s launcherVersion = "1.1.15"
 Define.s launcherDeveloper = "Kron4ek"
 
 Declare assetsToResources(assetsIndex.s)
@@ -115,6 +115,7 @@ If OpenWindow(0, #PB_Ignore, #PB_Ignore, windowWidth, windowHeight, "Vortex Mine
           downloadMissingLibraries = ReadPreferenceInteger("DownloadMissingLibs", downloadMissingLibrariesDefault)
           librariesString = ""
           clientArguments = ""
+          jvmArguments = ""
 
           If FindString(clientVersion, " ")
             clientVersion = removeSpacesFromVersionName(clientVersion)
@@ -197,7 +198,7 @@ If OpenWindow(0, #PB_Ignore, #PB_Ignore, windowWidth, windowHeight, "Vortex Mine
                       jsonArrayElement = GetJSONElement(jsonJvmArray, i)
 
                       If JSONType(jsonArrayElement) = #PB_JSON_String
-                        jvmArguments + " " + GetJSONString(jsonArrayElement) + " "
+                        jvmArguments + " " + Chr(34) + GetJSONString(jsonArrayElement) + Chr(34) + " "
                       EndIf
                     Next
                   EndIf
@@ -229,7 +230,7 @@ If OpenWindow(0, #PB_Ignore, #PB_Ignore, windowWidth, windowHeight, "Vortex Mine
                           jsonArrayElement = GetJSONElement(jsonJvmArray, i)
 
                           If JSONType(jsonArrayElement) = #PB_JSON_String
-                            jvmArguments + " " + GetJSONString(jsonArrayElement) + " "
+                            jvmArguments + " " + Chr(34) + GetJSONString(jsonArrayElement) + Chr(34) + " "
                           EndIf
                         Next
                       EndIf
@@ -307,8 +308,8 @@ If OpenWindow(0, #PB_Ignore, #PB_Ignore, windowWidth, windowHeight, "Vortex Mine
                   fullLaunchString = ReplaceString(fullLaunchString, "${library_directory}", "libraries")
                   fullLaunchString = ReplaceString(fullLaunchString, "${classpath_separator}", ":")
                   fullLaunchString = ReplaceString(fullLaunchString, "${natives_directory}", nativesPath)
-                  fullLaunchString = ReplaceString(fullLaunchString, "-Dminecraft.launcher.brand=${launcher_name}", "")
-                  fullLaunchString = ReplaceString(fullLaunchString, "-Dminecraft.launcher.version=${launcher_version}", "")
+                  fullLaunchString = ReplaceString(fullLaunchString, Chr(34) + "-Dminecraft.launcher.brand=${launcher_name}" + Chr(34), "")
+                  fullLaunchString = ReplaceString(fullLaunchString, Chr(34) + "-Dminecraft.launcher.version=${launcher_version}" + Chr(34), "")
 
                   RunProgram(javaBinaryPath, fullLaunchString, workingDirectory)
 
