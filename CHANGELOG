@@ -1,3 +1,8 @@
+v1.1.16
+	* Fixed a critical security vulnerability related to Log4j ([CVE-2021-44228](https://nvd.nist.gov/vuln/detail/CVE-2021-44228)).
+	* Added handling of two new Minecraft arguments (clientId and xuid).
+	* Added handling of spaces in the path to the game directory.
+---------------------------------------------------------------------
 v1.1.15
 	* Fixed launching new Fabric versions.
 ---------------------------------------------------------------------

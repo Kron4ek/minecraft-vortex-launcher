@@ -19,11 +19,11 @@ Define.i saveLaunchString, versionsTypeGadget, saveLaunchStringGadget, launchStr
 Define.i argsTextGadget, javaBinaryPathTextGadget, downloadThreadsTextGadget, downloadAllFilesGadget
 Define.i gadgetsWidth, gadgetsHeight, gadgetsIndent, windowWidth, windowHeight
 Define.i listOfFiles, jsonFile, jsonObject, jsonObjectObjects, fileSize, jsonJarMember, jsonArgumentsArray, jsonArrayElement, inheritsJson, clientSize
-Define.i releaseTimeMember, releaseTime, jsonJvmArray
+Define.i releaseTimeMember, releaseTime, jsonJvmArray, loggingMember, loggingClientMember, loggingFileMember, logConfSize
 
 Define.s playerName, ramAmount, clientVersion, javaBinaryPath, fullLaunchString, assetsIndex, clientUrl, fileHash, versionToDownload
 Define.s assetsIndex, clientMainClass, clientArguments, inheritsClientJar, customLaunchArguments, clientJarFile, nativesPath, librariesString
-Define.s uuid, jvmArguments
+Define.s uuid, jvmArguments, logConfId, logConfUrl, logConfArgument
 
 Define.i downloadThread, downloadMissingLibraries, jsonArgumentsMember, jsonArgumentsModernMember, jsonInheritsFromMember
 Define.i downloadMissingLibrariesGadget, downloadThreadsGadget, asyncDownloadGadget, saveSettingsButton, useCustomJavaGadget, useCustomParamsGadget, keepLauncherOpenGadget
@@ -42,7 +42,7 @@ Define.i useCustomJavaDefault = 0
 Define.i useCustomParamsDefault = 0
 Define.i keepLauncherOpenDefault = 0
 
-Define.s launcherVersion = "1.1.15"
+Define.s launcherVersion = "1.1.16"
 Define.s launcherDeveloper = "Kron4ek"
 
 Declare assetsToResources(assetsIndex.s)
@@ -119,6 +119,7 @@ If OpenWindow(0, #PB_Ignore, #PB_Ignore, windowWidth, windowHeight, "Vortex Mine
           librariesString = ""
           clientArguments = ""
           jvmArguments = ""
+          logConfArgument = ""
 
           If FileSize("/Library/Internet Plug-ins/JavaAppletPlugin.plugin/Contents/Home/bin/java") > 0
             javaBinaryPath = "/Library/Internet Plug-ins/JavaAppletPlugin.plugin/Contents/Home/bin/java"
@@ -268,6 +269,20 @@ If OpenWindow(0, #PB_Ignore, #PB_Ignore, windowWidth, windowHeight, "Vortex Mine
                   EndIf
                 EndIf
 
+                loggingMember = GetJSONMember(jsonObject, "logging")
+
+                If loggingMember
+                  loggingClientMember = GetJSONMember(loggingMember, "client")
+
+                  If loggingClientMember
+                    loggingFileMember = GetJSONMember(loggingClientMember, "file")
+
+                    If loggingFileMember
+                      logConfArgument = "-Dlog4j.configurationFile=assets/log_configs/" + GetJSONString(GetJSONMember(loggingFileMember, "id"))
+                    EndIf
+                  EndIf
+                EndIf
+
                 If FileSize(clientJarFile) > 0
                   librariesString = parseLibraries(clientVersion, downloadMissingLibraries) + librariesString
                   clientMainClass = GetJSONString(GetJSONMember(jsonObject, "mainClass"))
@@ -299,7 +314,7 @@ If OpenWindow(0, #PB_Ignore, #PB_Ignore, windowWidth, windowHeight, "Vortex Mine
                     customLaunchArguments = ReadPreferenceString("LaunchArguments", customLaunchArgumentsDefault)
                   EndIf
 
-                  fullLaunchString = "-Xmx" + ramAmount + "M " + customLaunchArguments + " " + jvmArguments + " " + clientMainClass + " " + clientArguments
+                  fullLaunchString = "-Xmx" + ramAmount + "M " + customLaunchArguments + " -Dlog4j2.formatMsgNoLookups=true " + logConfArgument + " " + jvmArguments + " " + clientMainClass + " " + clientArguments
 
                   fullLaunchString = ReplaceString(fullLaunchString, "${auth_player_name}", playerName)
                   fullLaunchString = ReplaceString(fullLaunchString, "${version_name}", clientVersion)
@@ -307,6 +322,8 @@ If OpenWindow(0, #PB_Ignore, #PB_Ignore, windowWidth, windowHeight, "Vortex Mine
                   fullLaunchString = ReplaceString(fullLaunchString, "${assets_root}", "assets")
                   fullLaunchString = ReplaceString(fullLaunchString, "${auth_uuid}", uuid)
                   fullLaunchString = ReplaceString(fullLaunchString, "${auth_access_token}", "00000000000000000000000000000000")
+                  fullLaunchString = ReplaceString(fullLaunchString, "${clientid}", "0000")
+                  fullLaunchString = ReplaceString(fullLaunchString, "${auth_xuid}", "0000")
                   fullLaunchString = ReplaceString(fullLaunchString, "${user_properties}", "{}")
                   fullLaunchString = ReplaceString(fullLaunchString, "${user_type}", "mojang")
                   fullLaunchString = ReplaceString(fullLaunchString, "${version_type}", "release")
@@ -404,6 +421,26 @@ If OpenWindow(0, #PB_Ignore, #PB_Ignore, windowWidth, windowHeight, "Vortex Mine
 
               CreateDirectoryRecursive("assets/indexes")
               ReceiveHTTPFile(GetJSONString(GetJSONMember(GetJSONMember(jsonObject, "assetIndex"), "url")), "assets/indexes/" + assetsIndex + ".json")
+
+              loggingMember = GetJSONMember(jsonObject, "logging")
+
+              If loggingMember
+                loggingClientMember = GetJSONMember(loggingMember, "client")
+
+                If loggingClientMember
+                  loggingFileMember = GetJSONMember(loggingClientMember, "file")
+
+                  If loggingFileMember
+                    logConfId = GetJSONString(GetJSONMember(loggingFileMember, "id"))
+                    logConfUrl = GetJSONString(GetJSONMember(loggingFileMember, "url"))
+                    logConfSize = GetJSONInteger(GetJSONMember(loggingFileMember, "size"))
+
+                    WriteStringN(listOfFiles, logConfUrl + "::" + "assets/log_configs/" + logConfId + "::" + logConfSize)
+
+                    CreateDirectoryRecursive("assets/log_configs")
+                  EndIf
+                EndIf
+              EndIf
 
               clientUrl = GetJSONString(GetJSONMember(GetJSONMember(GetJSONMember(jsonObject, "downloads"), "client"), "url"))
               clientSize = GetJSONInteger(GetJSONMember(GetJSONMember(GetJSONMember(jsonObject, "downloads"), "client"), "size"))
