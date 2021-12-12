@@ -42,7 +42,7 @@ Define.i useCustomJavaDefault = 0
 Define.i useCustomParamsDefault = 0
 Define.i keepLauncherOpenDefault = 0
 
-Define.s launcherVersion = "1.1.16"
+Define.s launcherVersion = "1.1.17"
 Define.s launcherDeveloper = "Kron4ek"
 
 Declare assetsToResources(assetsIndex.s)
@@ -245,8 +245,6 @@ If OpenWindow(0, #PB_Ignore, #PB_Ignore, windowWidth, windowHeight, "Vortex Mine
                     If releaseTimeMember
                       releaseTime = Val(StringField(GetJSONString(releaseTimeMember), 1, "-")) * 365 + Val(StringField(GetJSONString(releaseTimeMember), 2, "-")) * 30
                     EndIf
-
-                    FreeJSON(inheritsJson)
                   Else
                     MessageRequester("Error", inheritsClientJar + ".json file is missing!") : Break
                   EndIf
@@ -260,7 +258,11 @@ If OpenWindow(0, #PB_Ignore, #PB_Ignore, windowWidth, windowHeight, "Vortex Mine
                   EndIf
                 EndIf
 
-                loggingMember = GetJSONMember(jsonObject, "logging")
+                If jsonInheritsFromMember And inheritsJson
+                  loggingMember = GetJSONMember(inheritsJsonObject, "logging")
+                Else
+                  loggingMember = GetJSONMember(jsonObject, "logging")
+                EndIf
 
                 If loggingMember
                   loggingClientMember = GetJSONMember(loggingMember, "client")
@@ -272,6 +274,10 @@ If OpenWindow(0, #PB_Ignore, #PB_Ignore, windowWidth, windowHeight, "Vortex Mine
                       logConfArgument = "-Dlog4j.configurationFile=assets/log_configs/" + GetJSONString(GetJSONMember(loggingFileMember, "id"))
                     EndIf
                   EndIf
+                EndIf
+
+                If inheritsJson
+                  FreeJSON(inheritsJson)
                 EndIf
 
                 If FileSize(clientJarFile) > 0
