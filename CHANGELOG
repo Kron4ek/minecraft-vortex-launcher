@@ -1,3 +1,6 @@
+v1.1.18
+	* Fixed launching Minecraft clients that use new LWJGL (3.3+)
+---------------------------------------------------------------------
 v1.1.17
 	* Fixed a critical security vulnerability related to Log4j (CVE-2021-44228). Properly this time.
 ---------------------------------------------------------------------

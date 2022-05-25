@@ -1,6 +1,6 @@
 EnableExplicit
 
-Define.s workingDirectory = GetPathPart(ProgramFilename())
+Define.s workingDirectory = RTrim(GetPathPart(ProgramFilename()), "/")
 Global.s tempDirectory = GetTemporaryDirectory()
 
 Global.i downloadOkButton
@@ -42,7 +42,7 @@ Define.i useCustomJavaDefault = 0
 Define.i useCustomParamsDefault = 0
 Define.i keepLauncherOpenDefault = 0
 
-Define.s launcherVersion = "1.1.17"
+Define.s launcherVersion = "1.1.18"
 Define.s launcherDeveloper = "Kron4ek"
 
 Declare assetsToResources(assetsIndex.s)
@@ -315,7 +315,7 @@ If OpenWindow(0, #PB_Ignore, #PB_Ignore, windowWidth, windowHeight, "Vortex Mine
 
                   fullLaunchString = ReplaceString(fullLaunchString, "${auth_player_name}", playerName)
                   fullLaunchString = ReplaceString(fullLaunchString, "${version_name}", clientVersion)
-                  fullLaunchString = ReplaceString(fullLaunchString, "${game_directory}", ".")
+                  fullLaunchString = ReplaceString(fullLaunchString, "${game_directory}", Chr(34) + workingDirectory + Chr(34))
                   fullLaunchString = ReplaceString(fullLaunchString, "${assets_root}", "assets")
                   fullLaunchString = ReplaceString(fullLaunchString, "${auth_uuid}", uuid)
                   fullLaunchString = ReplaceString(fullLaunchString, "${auth_access_token}", "00000000000000000000000000000000")
@@ -687,7 +687,7 @@ Procedure.s parseLibraries(clientVersion.s, prepareForDownload.i = 0)
 
   Protected.s libName, libsString, packFileName, url
   Protected.s jsonRulesOsName
-  Protected Dim libSplit.s(3)
+  Protected Dim libSplit.s(4)
 
   If prepareForDownload = 1
     downloadListFile = OpenFile(#PB_Any, tempDirectory + "vlauncher_download_list.txt")
@@ -731,11 +731,16 @@ Procedure.s parseLibraries(clientVersion.s, prepareForDownload.i = 0)
       If allowLib
         libName = GetJSONString(GetJSONMember(jsonArrayElement, "name"))
 
-        For k = 1 To 3
+        libSplit(4) = ""
+        For k = 1 To 4
           libSplit(k) = StringField(libName, k, ":")
         Next
 
         libName = ReplaceString(libSplit(1), ".", "/") + "/" + libSplit(2) + "/" + libSplit(3) + "/" + libSplit(2) + "-" + libSplit(3)
+
+        If libSplit(4)
+          libName + "-" + libSplit(4)
+        EndIf
 
         If prepareForDownload = 1
           jsonDownloadsMember = GetJSONMember(jsonArrayElement, "downloads")
