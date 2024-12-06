@@ -1,6 +1,6 @@
 EnableExplicit
 
-Define.s workingDirectory = RTrim(GetPathPart(ProgramFilename()), "\")
+Global.s workingDirectory = RTrim(GetPathPart(ProgramFilename()), "\")
 Global.s tempDirectory = GetTemporaryDirectory()
 
 Global Dim programFilesDir.s(1)
@@ -31,12 +31,12 @@ Define.i downloadMissingLibraries, jsonArgumentsMember, jsonArgumentsModernMembe
 Define.i downloadMissingLibrariesGadget, downloadThreadsGadget, asyncDownloadGadget, saveSettingsButton, useCustomJavaGadget, useCustomParamsGadget, keepLauncherOpenGadget
 Define.i i
 
-Define.s playerNameDefault = "Name", ramAmountDefault = "700"
+Define.s playerNameDefault = "PlayerName", ramAmountDefault = "2500"
 Define.s customLaunchArgumentsDefault = "-Xss1M -XX:+UnlockExperimentalVMOptions -XX:+UseG1GC -XX:G1NewSizePercent=20 -XX:G1ReservePercent=20 -XX:MaxGCPauseMillis=50 -XX:G1HeapRegionSize=32M"
 Define.s customOldLaunchArgumentsDefault = "-XX:+UseConcMarkSweepGC -XX:+CMSIncrementalMode -XX:-UseAdaptiveSizePolicy -Xmn128M"
-Define.i downloadThreadsAmountDefault = 10
-Define.i asyncDownloadDefault = 0
-Define.i downloadMissingLibrariesDefault = 0
+Define.i downloadThreadsAmountDefault = 20
+Define.i asyncDownloadDefault = 1
+Define.i downloadMissingLibrariesDefault = 1
 Define.i downloadAllFilesDefault = 0
 Define.i versionsTypeDefault = 0
 Define.i saveLaunchStringDefault = 0
@@ -45,7 +45,7 @@ Define.i keepLauncherOpenDefault = 0
 Global.i useCustomJavaDefault = 0
 Global.s javaBinaryPathDefault = "C:\jre8\bin\javaw.exe"
 
-Define.s launcherVersion = "1.1.19"
+Define.s launcherVersion = "1.1.20"
 Define.s launcherDeveloper = "Kron4ek"
 
 Declare assetsToResources(assetsIndex.s)
@@ -57,7 +57,7 @@ Declare CreateDirectoryRecursive(path.s)
 Declare generateProfileJson()
 
 Declare.s parseVersionsManifest(versionType.i = 0, getClientJarUrl.i = 0, clientVersion.s = "")
-Declare.s parseLibraries(clientVersion.s, prepareForDownload.i = 0)
+Declare.s parseLibraries(clientVersion.s, prepareForDownload.i = 0, librariesString.s = "")
 Declare.s fileRead(pathToFile.s)
 Declare.s removeSpacesFromVersionName(clientVersion.s)
 
@@ -218,7 +218,10 @@ If OpenWindow(0, #PB_Ignore, #PB_Ignore, windowWidth, windowHeight, "Vortex Mine
                   EndIf
                 EndIf
 
-                If jsonInheritsFromMember
+                If FileSize(clientJarFile) > 0
+                  librariesString + parseLibraries(clientVersion, downloadMissingLibraries)
+
+				If jsonInheritsFromMember
                   inheritsClientJar = GetJSONString(jsonInheritsFromMember)
 
                   inheritsJson = ParseJSON(#PB_Any, fileRead("versions\" + inheritsClientJar + "\" + inheritsClientJar + ".json"))
@@ -250,7 +253,7 @@ If OpenWindow(0, #PB_Ignore, #PB_Ignore, windowWidth, windowHeight, "Vortex Mine
                       EndIf
                     EndIf
 
-                    librariesString + parseLibraries(inheritsClientJar, downloadMissingLibraries)
+                    librariesString + parseLibraries(inheritsClientJar, downloadMissingLibraries, librariesString)
                     assetsIndex = GetJSONString(GetJSONMember(JSONValue(inheritsJson), "assets"))
 
                     releaseTimeMember = GetJSONMember(inheritsJsonObject, "releaseTime")
@@ -292,9 +295,7 @@ If OpenWindow(0, #PB_Ignore, #PB_Ignore, windowWidth, windowHeight, "Vortex Mine
                 If inheritsJson
                   FreeJSON(inheritsJson)
                 EndIf
-
-                If FileSize(clientJarFile) > 0
-                  librariesString = parseLibraries(clientVersion, downloadMissingLibraries) + librariesString
+                
                   clientMainClass = GetJSONString(GetJSONMember(jsonObject, "mainClass"))
 
                   UseMD5Fingerprint()
@@ -383,8 +384,6 @@ If OpenWindow(0, #PB_Ignore, #PB_Ignore, windowWidth, windowHeight, "Vortex Mine
             EndIf
           EndIf
         Case downloadButton
-          InitNetwork()
-
           *FileBuffer = ReceiveHTTPMemory("https://launchermeta.mojang.com/mc/game/version_manifest.json")
           If *FileBuffer
             If OpenWindow(1, #PB_Ignore, #PB_Ignore, 200, 120, "Client Downloader")
@@ -503,27 +502,27 @@ If OpenWindow(0, #PB_Ignore, #PB_Ignore, windowWidth, windowHeight, "Vortex Mine
 
               downloadThreadsTextGadget = TextGadget(#PB_Any, 5, 65, 80, 30, "Download threads:")
               downloadThreadsGadget = StringGadget(#PB_Any, 70, 65, 260, 25, ReadPreferenceString("DownloadThreads", Str(downloadThreadsAmountDefault)), #PB_String_Numeric)
-              GadgetToolTip(downloadThreadsGadget, "Higher numbers may speedup downloads (works only with multi-threads downloads)")
+              GadgetToolTip(downloadThreadsGadget, "Higher numbers may speedup downloads on fast internet connection (works only with multi-threads downloads)")
               SetGadgetAttribute(downloadThreadsGadget, #PB_String_MaximumLength, 3)
 
-              CheckBoxGadget(311, 5, 95, 300, 20, "Fast multi-thread downloads (experimental)")
+              CheckBoxGadget(311, 5, 95, 300, 20, "Fast multithreaded downloading")
               asyncDownloadGadget = 311
               SetGadgetState(asyncDownloadGadget, ReadPreferenceInteger("AsyncDownload", asyncDownloadDefault))
 
               downloadMissingLibrariesGadget = CheckBoxGadget(#PB_Any, 5, 115, 300, 20, "Download missing libraries on game start")
               SetGadgetState(downloadMissingLibrariesGadget, ReadPreferenceInteger("DownloadMissingLibs", downloadMissingLibrariesDefault))
 
-              saveLaunchStringGadget = CheckBoxGadget(#PB_Any, 5, 135, 300, 20, "Save launch string to file")
-              GadgetToolTip(saveLaunchStringGadget, "Full launch string will be saved to launch_string.txt file")
+              saveLaunchStringGadget = CheckBoxGadget(#PB_Any, 5, 135, 300, 20, "Save the launch string to a file")
+              GadgetToolTip(saveLaunchStringGadget, "The full game launch string will be saved to launch_string.txt")
               SetGadgetState(saveLaunchStringGadget, ReadPreferenceInteger("SaveLaunchString", saveLaunchStringDefault))
 
               useCustomJavaGadget = CheckBoxGadget(#PB_Any, 5, 155, 300, 20, "Use custom Java")
-              GadgetToolTip(useCustomJavaGadget, "Use custom Java instead of installed one")
+              GadgetToolTip(useCustomJavaGadget, "Use custom Java instead of the installed one")
               SetGadgetState(useCustomJavaGadget, ReadPreferenceInteger("UseCustomJava", useCustomJavaDefault))
 
               CheckBoxGadget(313, 5, 175, 300, 20, "Use custom launch parameters")
               useCustomParamsGadget = 313
-              GadgetToolTip(useCustomParamsGadget, "Use custom parameters to launch Minecraft")
+              GadgetToolTip(useCustomParamsGadget, "Set custom parameters to launch the game")
               SetGadgetState(useCustomParamsGadget, ReadPreferenceInteger("UseCustomParameters", useCustomParamsDefault))
 
               CheckBoxGadget(689, 5, 195, 300, 20, "Keep the launcher open")
@@ -542,10 +541,6 @@ If OpenWindow(0, #PB_Ignore, #PB_Ignore, windowWidth, windowHeight, "Vortex Mine
         Case useCustomJavaGadget
           DisableGadget(javaPathGadget, Bool(Not GetGadgetState(useCustomJavaGadget)))
         Case asyncDownloadGadget
-          If GetGadgetState(asyncDownloadGadget)
-            MessageRequester("Warning", "This option is experimental and may cause crashes." + #CRLF$ + #CRLF$ + "You have been warned!")
-          EndIf
-
           DisableGadget(downloadThreadsGadget, Bool(Not GetGadgetState(asyncDownloadGadget)))
         Case saveSettingsButton
           If GetGadgetText(downloadThreadsGadget) = "0" : SetGadgetText(downloadThreadsGadget, "5") : EndIf
@@ -692,14 +687,14 @@ Procedure.s parseVersionsManifest(versionType.i = 0, getClientJarUrl.i = 0, clie
   SetGadgetState(versionsDownloadGadget, 0)
 EndProcedure
 
-Procedure.s parseLibraries(clientVersion.s, prepareForDownload.i = 0)
+Procedure.s parseLibraries(clientVersion.s, prepareForDownload.i = 0, librariesString.s = "")
   Protected.i jsonLibrariesArray, jsonArrayElement, jsonFile, fileSize, downloadListFile, zipFile
   Protected.i jsonArtifactsMember, jsonDownloadsMember, jsonUrlMember, jsonClassifiersMember, jsonNativesLinuxMember
   Protected.i jsonRulesMember, jsonRulesOsMember
   Protected.i i, k
-  Protected.i allowLib
+  Protected.i allowLib, skipLib
 
-  Protected.s libName, libsString, packFileName, url
+  Protected.s libName, libNameBase, libsString, packFileName, url
   Protected.s jsonRulesOsName
   Protected Dim libSplit.s(4)
 
@@ -719,6 +714,7 @@ Procedure.s parseLibraries(clientVersion.s, prepareForDownload.i = 0)
       jsonArrayElement = GetJSONElement(jsonLibrariesArray, i)
       allowLib = 1
       jsonRulesOsName = "empty"
+      skipLib = 0
 
       jsonRulesMember = GetJSONMember(jsonArrayElement, "rules")
 
@@ -750,7 +746,14 @@ Procedure.s parseLibraries(clientVersion.s, prepareForDownload.i = 0)
           libSplit(k) = StringField(libName, k, ":")
         Next
 
-        libName = ReplaceString(libSplit(1), ".", "\") + "\" + libSplit(2) + "\" + libSplit(3) + "\" + libSplit(2) + "-" + libSplit(3)
+		libNameBase = ReplaceString(libSplit(1), ".", "\") + "\" + libSplit(2)
+        libName = libNameBase + "\" + libSplit(3) + "\" + libSplit(2) + "-" + libSplit(3)
+
+        If librariesString <> ""
+          If FindString(librariesString, libNameBase + "\")
+            skipLib = 1
+          EndIf
+        EndIf
 
         If libSplit(4)
           libName + "-" + libSplit(4)
@@ -790,7 +793,9 @@ Procedure.s parseLibraries(clientVersion.s, prepareForDownload.i = 0)
         EndIf
 
         If Not GetJSONMember(jsonArrayElement, "natives")
-          libsString + "libraries\" + libName + ".jar;"
+		  If skipLib = 0
+            libsString + workingDirectory + "\libraries\" + libName + ".jar;"
+          EndIf
         Else
           If Not Right(libName, 15) = "natives-windows"
             zipFile = OpenPack(#PB_Any, "libraries\" + libName + "-natives-windows.jar")
@@ -854,8 +859,6 @@ Procedure downloadFiles(downloadAllFiles.i)
     If IsGadget(downloadVersionButton) : DisableGadget(downloadVersionButton, 1) : EndIf
     If IsGadget(progressBar) : SetGadgetAttribute(progressBar, #PB_ProgressBar_Maximum, linesTotal) : EndIf
 
-    InitNetwork()
-
     If asyncDownload
       While (Eof(file) = 0 Or currentDownloads > 0) And failedDownloads <= 5
         For i = 0 To downloadThreadsAmount
@@ -878,13 +881,13 @@ Procedure downloadFiles(downloadAllFiles.i)
                 lines - 1
               EndIf
             EndIf
-          ElseIf HTTPProgress(httpArray(i)) = #PB_Http_Success
+          ElseIf HTTPProgress(httpArray(i)) = #PB_HTTP_Success
             currentDownloads - 1
             lines - 1
 
             FinishHTTP(httpArray(i))
             httpArray(i) = 0
-          ElseIf HTTPProgress(httpArray(i)) = #PB_Http_Failed
+          ElseIf HTTPProgress(httpArray(i)) = #PB_HTTP_Failed
             FinishHTTP(httpArray(i))
 
             If retries(i) < allowedRetries
