@@ -1,3 +1,11 @@
+v2.0
+        * Added multiple languages
+        * Integrated a fabric downloader
+        * Changed design of launcher
+        * Rebrand
+	* Added auto-saving launcher settings, as things like RAM amount, usernames, and version
+	  preferences wouldn't save unless you started the game
+---------------------------------------------------------------------
 v1.1.20
 	* Fixed launching NeoForge and new Fabric versions
 	* Multithreaded downloading is enabled by default now
