@@ -39,7 +39,13 @@ Check the [**Releases**](https://github.com/stuxvii/acid-launcher/releases) page
 ![image](https://github.com/user-attachments/assets/1f148afc-d8c9-4190-9d5a-8080ef1cef25)
 
 ---
+## Credits!
+Special thanks to
+- skvlk78, contributed to French
+- bozg, contributed to Portuguese
+- [mewity](https://github.com/daodov), contributed to Ukranian
 
+For providing with translations!
 ## License
 
 [GPLv3](https://github.com/stuxvii/acid-launcher/blob/master/LICENSE.txt)
