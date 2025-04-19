@@ -18,6 +18,7 @@ Fast, lightweight and easy way to launch your favorite LWGJL cube game. Natively
 * Doesn't require Minecraft account
 * Doesn't require Java to work
 * Can work fully offline
+* Auto-saves your changes automagically
 * Has a new layout to acommodate language integration and make the UX more pleasant, but allows changing back to the old one
   
 ---
