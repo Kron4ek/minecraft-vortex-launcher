@@ -51,9 +51,3 @@ For providing with translations!
 ## License
 
 [GPLv3](https://github.com/stuxvii/acid-launcher/blob/master/LICENSE.txt)
-
----
-
-### Mirrors
-
-Mirror on GitLab: https://gitlab.com/Kron4ek/vortex-minecraft-launcher
