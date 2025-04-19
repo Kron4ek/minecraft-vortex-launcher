@@ -1,7 +1,7 @@
 # This is a fork of [Minecraft Vortex Launcher](https://github.com/Kron4ek/minecraft-vortex-launcher) and is not endorsed by it. 
 ## Acid Launcher
 
-Fast, lightweight and easy to launch your favorite LWGJL cube game. Natively available for Windows. (Linux support planned soon)
+Fast, lightweight and easy way to launch your favorite LWGJL cube game. Natively available for Windows. (Linux support planned soon)
 
 ---
 
