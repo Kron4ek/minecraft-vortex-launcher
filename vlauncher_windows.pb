@@ -1128,10 +1128,3 @@ Procedure.s removeSpacesFromVersionName(clientVersion.s)
 
   ProcedureReturn newVersionName
 EndProcedure
-
-; IDE Options = PureBasic 6.20 (Windows - x64)
-; CursorPosition = 1059
-; FirstLine = 1034
-; Folding = --
-; Optimizer
-; EnableXP
