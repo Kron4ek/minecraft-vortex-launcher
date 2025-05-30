@@ -4,6 +4,7 @@ Global.s workingDirectory = RTrim(GetPathPart(ProgramFilename()), "\")
 Global.s tempDirectory = GetTemporaryDirectory()
 
 Global Dim programFilesDir.s(1)
+Global Dim javaDir.s(1)
 Global.i downloadOkButton
 Global.i downloadThread
 Global.i downloadThreadsAmount
@@ -63,6 +64,9 @@ Declare.s removeSpacesFromVersionName(clientVersion.s)
 
 programFilesDir(0) = GetEnvironmentVariable("ProgramW6432") + "\"
 programFilesDir(1) = GetEnvironmentVariable("PROGRAMFILES") + "\"
+
+javaDir(0) = "Java"
+javaDir(1) = "Eclipse Adoptium"
 
 SetCurrentDirectory(workingDirectory)
 OpenPreferences("vortex_launcher.conf")
@@ -1036,7 +1040,7 @@ EndProcedure
 
 Procedure findJava()
   Protected.s dirName, javaBinaryPath, customJavaPath
-  Protected.i i, directory
+  Protected.i i, javaIndex, directory
 
   ClearGadgetItems(javaListGadget)
   DisableGadget(javaListGadget, 0)
@@ -1051,26 +1055,28 @@ Procedure findJava()
     DisableGadget(javaListGadget, 1)
   Else
     For i = 0 To 1
-      If programFilesDir(i) <> "\"
-        directory = ExamineDirectory(#PB_Any, programFilesDir(i) + "Java", "*")
-
-        If directory
-          While NextDirectoryEntry(directory) And DirectoryEntryType(directory) = #PB_DirectoryEntry_Directory
-            dirName = DirectoryEntryName(directory)
-
-            If dirName <> ".." And dirName <> "." And FileSize(programFilesDir(i) + "Java\" + dirName + "\bin\javaw.exe") > 0
-              If i
-                dirName + " (x32)"
+      For javaIndex = 0 To 1
+        If programFilesDir(i) <> "\"
+          directory = ExamineDirectory(#PB_Any, programFilesDir(i) + javaDir(javaIndex), "*")
+  
+          If directory
+            While NextDirectoryEntry(directory) And DirectoryEntryType(directory) = #PB_DirectoryEntry_Directory
+              dirName = DirectoryEntryName(directory)
+  
+              If dirName <> ".." And dirName <> "." And FileSize(programFilesDir(i) + javaDir(javaIndex) + "\" + dirName + "\bin\javaw.exe") > 0
+                If i
+                  dirName + " (x32)"
+                EndIf
+  
+                AddGadgetItem(javaListGadget, -1, dirName)
+                SetGadgetState(javaListGadget, 0)
               EndIf
-
-              AddGadgetItem(javaListGadget, -1, dirName)
-              SetGadgetState(javaListGadget, 0)
-            EndIf
-          Wend
-
-          FinishDirectory(directory)
+            Wend
+  
+            FinishDirectory(directory)
+          EndIf
         EndIf
-      EndIf
+      Next
     Next
 
     If Not CountGadgetItems(javaListGadget)
@@ -1122,3 +1128,10 @@ Procedure.s removeSpacesFromVersionName(clientVersion.s)
 
   ProcedureReturn newVersionName
 EndProcedure
+
+; IDE Options = PureBasic 6.20 (Windows - x64)
+; CursorPosition = 1059
+; FirstLine = 1034
+; Folding = --
+; Optimizer
+; EnableXP
