@@ -143,13 +143,27 @@ If OpenWindow(0, #PB_Ignore, #PB_Ignore, windowWidth, windowHeight, "Vortex Mine
             playerName = ReplaceString(playerName, " ", "")
           EndIf
 
+          Global.i repeatJavaFind_i, repeatJavaFind_javaIndex, repeatJavaFind_directory
+
           If ramAmount And Len(playerName) >= 3
             If ReadPreferenceInteger("UseCustomJava", useCustomJavaDefault)
               javaBinaryPath = ReadPreferenceString("JavaPath", javaBinaryPathDefault)
             ElseIf Right(javaBinaryPath, 5) = "(x32)"
-              javaBinaryPath = programFilesDir(1) + "Java\" + RemoveString(javaBinaryPath, " (x32)") + "\bin\javaw.exe"
+              For repeatJavaFind_javaIndex = 0 To 1
+                repeatJavaFind_directory = ExamineDirectory(#PB_Any, programFilesDir(1) + javaDir(repeatJavaFind_javaIndex), "*")
+        
+                If repeatJavaFind_directory
+                  javaBinaryPath = programFilesDir(1) + javaDir(repeatJavaFind_javaIndex) + "\" + RemoveString(javaBinaryPath, " (x32)") + "\bin\javaw.exe"
+                EndIf
+              Next
             Else
-              javaBinaryPath = programFilesDir(0) + "Java\" + javaBinaryPath + "\bin\javaw.exe"
+              For repeatJavaFind_javaIndex = 0 To 1
+                repeatJavaFind_directory = ExamineDirectory(#PB_Any, programFilesDir(0) + javaDir(repeatJavaFind_javaIndex), "*")
+        
+                If repeatJavaFind_directory
+                  javaBinaryPath = programFilesDir(0) + javaDir(repeatJavaFind_javaIndex) + "\" + javaBinaryPath + "\bin\javaw.exe"
+                EndIf
+              Next
             EndIf
 
             If Val(ramAmount) < 350
